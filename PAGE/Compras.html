@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Compras</title>
+    
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="../CSS/Compras.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo"><i class='bx bxl-codepen'></i></div>
+        <h2>Sistema POS</h2>
+    </div>
+    <ul class="sidebar-links">
+        <li><a href="Productos.html"><i class='bx bx-cube icon'></i><span class="text">Productos</span></a></li>
+        <li><a href="Categorias.html"><i class='bx bx-purchase-tag-alt icon'></i><span class="text">Categorías</span></a></li>
+        <li><a href="Inventario.html"><i class='bx bx-clipboard icon'></i><span class="text">Inventario</span></a></li>
+        <li><a href="Movimientos.html"><i class='bx bx-transfer icon'></i><span class="text">Movimientos</span></a></li>
+        <li><a href="Ajuste_de_inventario.html"><i class='bx bx-slider-alt icon'></i><span class="text">Ajuste Inv.</span></a></li>
+        <li><a href="Almacenes.html"><i class='bx bx-building-house icon'></i><span class="text">Almacenes</span></a></li>
+        <h4>Ventas y Compras</h4>
+        <li><a href="Compras.html" class="active"><i class='bx bx-cart-add icon'></i><span class="text">Compras</span></a></li>
+        <li><a href="Ventas.html"><i class='bx bx-cart-download icon'></i><span class="text">Ventas</span></a></li>
+        <h4>Administración</h4>
+        <li><a href="Personas.html"><i class='bx bx-group icon'></i><span class="text">Personas</span></a></li>
+    </ul>
+</aside>
+
+<main class="main-content">
+    <div class="header">
+        <div class="header-content">
+            <h2>Gestión de Compras</h2>
+            <p class="subtitle">Historial de ingresos de mercadería.</p>
+        </div>
+        <button class="btn-nuevo" onclick="abrirModalNuevaCompra()">➕ Nueva Compra</button>
+    </div>
+
+    <div class="search-container">
+        <div class="filters-wrapper">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar por serie, número o proveedor..." autocomplete="off">
+                <span class="search-icon">🔍</span>
+            </div>
+            <select id="warehouseSelect" class="warehouse-select"></select>
+        </div>
+    </div>
+
+    <div class="tabla-container">
+        <table class="tabla-datos">
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th>ALMACÉN</th>
+                    <th>DOCUMENTO</th>
+                    <th>SERIE - NÚMERO</th>
+                    <th>PROVEEDOR</th>
+                    <th>MONEDA</th>
+                    <th>TOTAL</th>
+                    <th class="text-center">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody id="comprasBody"></tbody>
+        </table>
+    </div>
+
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Mostrando <span id="lblStart">0</span> - <span id="lblEnd">0</span> de <span id="lblTotal">0</span> registros
+        </div>
+        
+        <div class="pagination-controls">
+            <div class="page-size-selector">
+                <label for="pageSizeSelect">Mostrar:</label>
+                <select id="pageSizeSelect">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+            
+            <div class="pagination-buttons">
+                <button class="page-btn" id="btnFirst" title="Primera página"><i class='bx bx-chevrons-left'></i></button>
+                <button class="page-btn" id="btnPrev" title="Anterior"><i class='bx bx-chevron-left'></i></button>
+                <div class="page-number-box">
+                    <span id="btnPageDisplay">1 / 1</span>
+                </div>
+                <button class="page-btn" id="btnNext" title="Siguiente"><i class='bx bx-chevron-right'></i></button>
+                <button class="page-btn" id="btnLast" title="Última página"><i class='bx bx-chevrons-right'></i></button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="modalDetalle" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header"><h3><i class='bx bx-detail'></i> Detalles de Compra</h3><span class="close-modal" onclick="cerrarModal('modalDetalle')">&times;</span></div>
+        <div class="modal-body"><div id="modalLoader" class="loader-container"><div class="spinner"></div><p>Cargando detalles...</p></div><div id="modalContentBody" style="display: none;"><div class="info-grid"><div class="info-item"><label>DOCUMENTO</label><div class="doc-badge"><span id="m_tipoDoc" class="badge-dark">-</span><span id="m_serieNumero" class="badge-number-modal">-</span></div></div><div class="info-item"><label>FECHA DE EMISIÓN</label><p id="m_fechaEmision">-</p></div><div class="info-item"><label>PROVEEDOR</label><p id="m_proveedor" class="font-bold">-</p><small id="m_ruc" style="color:#777">-</small></div><div class="info-item"><label>ALMACÉN</label><p id="m_almacen">-</p></div><div class="info-item"><label>MONEDA</label><p id="m_moneda">-</p></div><div class="info-item"><label>FECHA DE REGISTRO</label><p id="m_fechaRegistro">-</p></div></div><hr style="border:0; border-top:1px solid #eee; margin:20px 0;"><h4 style="margin-bottom:15px; font-size:14px; color:#333;"><i class='bx bx-list-ul'></i> Detalle de Productos</h4><div class="table-responsive-modal"><table class="modal-table"><thead><tr><th>CÓDIGO</th><th>PRODUCTO</th><th>UNIDAD</th><th>TIPO IGV</th><th class="text-right">CANTIDAD</th><th class="text-right">VALOR UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th></tr></thead><tbody id="modalTableBody"></tbody></table></div><div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="m_totalNoGravado">S/ 0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="m_totalSubtotal">S/ 0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="m_totalIgv">S/ 0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="m_totalFinal">S/ 0.00</span></div></div></div></div></div>
+        <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalDetalle')">Cerrar</button></div>
+    </div>
+</div>
+
+<div id="modalNuevaCompra" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header"><h3><i class='bx bx-cart-add'></i> Nueva Compra</h3><span class="close-modal" onclick="cerrarModal('modalNuevaCompra')">&times;</span></div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group"><label>Almacén *</label><select id="nc_almacen" class="form-control"></select><span class="error-message" id="error_nc_almacen">Requerido</span></div>
+                <div class="form-group"><label>Tipo de Documento *</label><select id="nc_tipoDoc" class="form-control"></select><span class="error-message" id="error_nc_tipoDoc">Requerido</span></div>
+                <div class="form-group"><label>Serie *</label><input type="text" id="nc_serie" class="form-control" placeholder="Ej: F001" maxlength="4"><span class="error-message" id="error_nc_serie">4 dígitos obligatorios</span></div>
+                <div class="form-group"><label>Número *</label><input type="text" id="nc_numero" class="form-control" placeholder="Ej: 12345" maxlength="8"><span class="error-message" id="error_nc_numero">Requerido (Máx 8)</span></div>
+                <div class="form-group"><label>Fecha de Emisión *</label><input type="date" id="nc_fecha" class="form-control"><span class="error-message" id="error_nc_fecha">Requerido</span></div>
+                <div class="form-group full-width"><label>Proveedor *</label><div class="autocomplete-wrapper search-with-clear"><input type="text" id="nc_buscarProveedor" class="form-control" placeholder="Buscar proveedor por nombre o documento..." autocomplete="off"><i class='bx bx-x clear-autocomplete' id="btnLimpiarProveedor"></i><div id="listaProveedores" class="autocomplete-list"></div><input type="hidden" id="nc_idProveedor"></div><span class="error-message" id="error_nc_proveedor">Debe seleccionar un proveedor</span></div>
+                <div class="form-group"><label>Moneda *</label><select id="nc_moneda" class="form-control"></select><span class="error-message" id="error_nc_moneda">Requerido</span></div>
+            </div>
+            <hr class="divider">
+            <div class="product-add-section"><div class="autocomplete-wrapper" style="flex-grow: 1;"><input type="text" id="nc_buscarProducto" class="form-control search-product-input" placeholder="📦 Buscar productos para agregar..." autocomplete="off"><div id="listaProductos" class="autocomplete-list"></div></div><button class="btn-create-prod" onclick="abrirModalCrearProducto()">+ Crear Producto</button></div>
+            <div class="table-responsive-modal" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"><table class="modal-table"><thead><tr><th>PRODUCTO</th><th>UNIDAD</th><th style="width: 200px;">TIPO IGV</th><th style="width: 80px;">CANT.</th><th style="width: 100px;">VAL. UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th><th></th></tr></thead><tbody id="nc_tablaProductos"></tbody></table></div>
+            <div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="nc_txtNoGravado">S/ 0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="nc_txtSubTotal">S/ 0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="nc_txtIGV">S/ 0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="nc_txtTotal">S/ 0.00</span></div></div></div>
+        </div>
+        <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalNuevaCompra')">Cancelar</button><button class="btn-save-modal" onclick="guardarCompra()"><i class='bx bx-save'></i> Guardar Compra</button></div>
+    </div>
+</div>
+
+<div id="modalCrearProducto" class="modal-overlay" style="z-index: 2100;">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header"><h3>Nuevo Producto</h3><span class="close-modal" onclick="cerrarModal('modalCrearProducto')">&times;</span></div>
+        <div class="modal-body"><form id="formNuevoProducto"><div class="form-grid"><div class="form-group full-width"><label>Código *</label><input type="text" id="np_codigo" class="form-control" placeholder="Ej: PROD001"><span class="error-message" id="error_np_codigo">Requerido</span></div><div class="form-group full-width"><label>Nombre *</label><input type="text" id="np_nombre" class="form-control" placeholder="Nombre del producto"><span class="error-message" id="error_np_nombre">Requerido</span></div><div class="form-group full-width"><label>Descripción</label><textarea id="np_descripcion" class="form-control" rows="2" placeholder="Descripción breve"></textarea></div><div class="form-group"><label>Unidad de Medida *</label><select id="np_unidad" class="form-control"></select><span class="error-message" id="error_np_unidad">Requerido</span></div><div class="form-group"><label>Tipo de IGV *</label><select id="np_igv" class="form-control"></select><span class="error-message" id="error_np_igv">Requerido</span></div><div class="form-group full-width"><label>Categoría *</label><select id="np_categoria" class="form-control"></select><span class="error-message" id="error_np_categoria">Requerido</span></div><div class="form-group"><label>Precio de Compra</label><div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number" id="np_precioCompra" class="form-control" value="0"></div></div><div class="form-group"><label>Precio de Venta *</label><div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number" id="np_precioVenta" class="form-control" placeholder="0"></div><span class="error-message" id="error_np_precioVenta">Requerido</span></div></div></form></div>
+        <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalCrearProducto')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevoProducto()">Guardar</button></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="../JS/Compras.js"></script>
+</body>
+</html>

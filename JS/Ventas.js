@@ -1,0 +1,241 @@
+const API_BASE = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api";
+
+const EP_SALE = `${API_BASE}/Sale`;
+const EP_WAREHOUSE = `${API_BASE}/Warehouse/select`; 
+const EP_VOUCHER = `${API_BASE}/VoucherType/select`; 
+const EP_CURRENCY = `${API_BASE}/Currency/select`;   
+const EP_PERSON = `${API_BASE}/Person`; 
+const EP_PRODUCT_SEARCH = `${API_BASE}/Product/search`; 
+const EP_PRODUCT_CRUD = `${API_BASE}/Product`; 
+const EP_UNIT = `${API_BASE}/UnitOfMeasure`;
+const EP_IGV = `${API_BASE}/IGVType`;
+const EP_CATEGORY = `${API_BASE}/Category`;
+
+let currentPage = 1;
+let pageSize = 10;
+let totalPages = 1;
+let searchTerm = "";
+let warehouseId = "";
+let igvListCache = []; 
+let searchResults = {}; 
+let searchTimer = null; 
+
+toastr.options = { "closeButton": true, "positionClass": "toast-bottom-right", "timeOut": "5000", "preventDuplicates": false };
+
+$(document).ready(function() {
+    loadWarehouses();
+    prepararOpcionesIGV();
+
+    $('#btnPrev').click(() => cambiarPagina(-1));
+    $('#btnNext').click(() => cambiarPagina(1));
+    $('#btnFirst').click(() => irAPagina(1));
+    $('#btnLast').click(() => irAPagina(totalPages));
+    $('#pageSizeSelect').on('change', function() { pageSize = parseInt($(this).val()); currentPage = 1; fetchVentas(currentPage); });
+    
+    $('#searchInput').on('input', function() {
+        const val = $(this).val().trim();
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => { searchTerm = val; currentPage = 1; fetchVentas(currentPage); }, 300); 
+    });
+
+    $('#warehouseSelect').on('change', function() { warehouseId = $(this).val(); currentPage = 1; fetchVentas(currentPage); });
+
+    $('#nv_buscarCliente').on('input focus', function() { buscarPersona($(this).val()); });
+    $('#nv_buscarProducto').on('input focus', function() { buscarProducto($(this).val()); });
+    
+    $('#btnLimpiarCliente').click(function() {
+        $('#nv_buscarCliente').val('').focus();
+        $('#nv_idCliente').val('');
+        $(this).hide();
+    });
+
+    $('.form-control').on('input change', function() { $(this).removeClass('error'); $(this).siblings('.error-message').removeClass('show'); });
+    $(document).on('input', '.input-table', function() { 
+        const val = parseFloat($(this).val());
+        if(!isNaN(val) && val > 0) { 
+            $(this).removeClass('error'); 
+            $(this).closest('.input-container').find('.row-error-msg').hide(); 
+        }
+    });
+
+    $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
+});
+
+function formatoMoneda(v) { if (v == null || isNaN(v)) return "0.00"; return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function formatearFechaPeru(f, h) { if (!f) return '-'; const d = new Date(f); const o = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Lima' }; if (h) { o.hour = '2-digit'; o.minute = '2-digit'; o.second = '2-digit'; o.hour12 = false; } return d.toLocaleString('es-PE', o); }
+
+async function loadWarehouses() {
+    try {
+        const r = await fetch(EP_WAREHOUSE); const d = await r.json(); const s = $('#warehouseSelect'); s.empty(); 
+        if (d.length > 0) { d.forEach((w, i) => { s.append(`<option value="${w.id}">${w.name}</option>`); if (i === 0) warehouseId = w.id; }); fetchVentas(currentPage); }
+    } catch (e) { console.error(e); }
+}
+
+async function prepararOpcionesIGV() {
+    try { const r = await fetch(EP_IGV); const d = await r.json(); igvListCache = d; } catch (e) { console.error(e); }
+}
+
+async function fetchVentas(page) {
+    const $tbody = $('#ventasBody'); $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">Cargando...</td></tr>');
+    try {
+        const r = await fetch(`${EP_SALE}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}`); const d = await r.json();
+        $tbody.empty(); const l = d.items || [];
+        if (l.length === 0) { $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">No se encontraron resultados.</td></tr>'); return; }
+        
+        l.forEach(v => {
+            const f = formatearFechaPeru(v.issueDate, false);
+            const sn = v.voucherNumber || '-';
+            const dn = v.personDocumentNumber || '';
+            const dl = v.personDocumentType || (dn.length === 11 ? "RUC" : "DNI");
+            const tot = formatoMoneda(v.total);
+            $tbody.append(`<tr><td>${f}</td><td style="color:#6b7280">${v.warehouse||'-'}</td><td><span style="background:#1f2937;color:white;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">${v.voucherType||'Doc'}</span></td><td><span style="background:#eff6ff;color:#3b82f6;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:600;border:1px solid #dbeafe">${sn}</span></td><td><div style="font-weight:600;color:#111827">${v.personName||'Cliente'}</div><div style="font-size:11px;color:#6b7280;margin-top:2px"><strong>${dl}:</strong> ${dn}</div></td><td style="color:#4b5563">${v.currency||'-'}</td><td style="font-weight:700;color:#111827">S/ ${tot}</td><td class="text-center"><button class="btn-action" onclick="abrirModalDetalle('${v.id}')"><i class='bx bx-show'></i></button></td></tr>`);
+        });
+
+        currentPage = d.pageNumber; totalPages = d.totalPages;
+        $('#lblStart').text((currentPage - 1) * pageSize + 1); $('#lblEnd').text(Math.min(currentPage * pageSize, d.totalCount)); $('#lblTotal').text(d.totalCount); $('#btnPageDisplay').text(`${currentPage} / ${totalPages}`);
+        $('#btnPrev').prop('disabled', !d.hasPreviousPage); $('#btnFirst').prop('disabled', !d.hasPreviousPage); $('#btnNext').prop('disabled', !d.hasNextPage); $('#btnLast').prop('disabled', !d.hasNextPage);
+    } catch (e) { console.error(e); }
+}
+function cambiarPagina(d) { const p = currentPage + d; if (p >= 1 && p <= totalPages) fetchVentas(p); }
+function irAPagina(p) { if (p >= 1 && p <= totalPages) fetchVentas(p); }
+
+async function abrirModalNuevaVenta() {
+    $('#modalNuevaVenta').css('display', 'flex');
+    // Sin fecha, ni serie, ni numero
+    const $btn = $('#modalNuevaVenta .btn-save-modal');
+    $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Venta");
+    cargarDropdown(EP_WAREHOUSE, 'nv_almacen'); cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); cargarDropdown(EP_CURRENCY, 'nv_moneda');
+    $('#nv_buscarCliente').val(''); $('#nv_idCliente').val(''); $('#btnLimpiarCliente').hide();
+    $('#nv_tablaProductos').empty();
+    $('.form-control').removeClass('error'); $('.error-message').removeClass('show');
+    calcularTotalesGlobales();
+}
+
+async function cargarDropdown(u,e){ try{const r=await fetch(u);const d=await r.json();const s=$(`#${e}`);s.empty();d.forEach(i=>{s.append(`<option value="${i.id}">${i.description||i.name||i.text||i.symbol||"Sin Nombre"}</option>`);});}catch(x){console.error(x);} }
+
+async function buscarPersona(t){ const l=$('#listaClientes');const q=t?t.trim():""; if(q.length<1){l.hide();return;} try{const r=await fetch(`${API_BASE}/Person/search?searchTerm=${q}`);const d=await r.json();const i=d.items||d; l.empty(); if(i.length>0){l.show();i.forEach(p=>{const dn=p.documentNumber||'';let dl=p.documentType||(dn.length===11?"RUC":"DNI"); const dt=`${dl}: ${dn} - ${p.name}`; l.append(`<div class="autocomplete-item" onclick="seleccionarCliente('${p.id}','${dt}')"><strong style="font-size:13px;color:#333;">${dt}</strong></div>`);});}else{l.hide();}}catch(e){l.hide();} }
+function seleccionarCliente(id, txt){ $('#nv_buscarCliente').val(txt); $('#nv_idCliente').val(id); $('#btnLimpiarCliente').show(); $('#listaClientes').hide(); $('#nv_buscarCliente').removeClass('error'); $('#error_nv_cliente').removeClass('show'); }
+
+async function buscarProducto(t){ 
+    const l=$('#listaProductos'); const a=$('#nv_almacen').val();
+    if(!a){ l.hide(); return; } const q=t?t.trim():""; if(q.length<1){ l.hide(); return; } 
+    try {
+        const r=await fetch(`${EP_PRODUCT_SEARCH}?searchTerm=${q}&warehouseId=${a}`); const d=await r.json(); const i=d.items||d; l.empty(); searchResults={}; 
+        if(i.length>0) {
+            l.show();
+            i.forEach(p => {
+                searchResults[p.id]=p;
+                const stock = parseFloat(p.stock) || 0;
+                let stockHtml = stock > 0 ? `<span style="font-weight:700;">stock: ${stock}</span>` : `<span style="color:#dc3545; font-weight:700;">No disponible Stock: 0</span>`;
+                let itemClass = stock > 0 ? "autocomplete-item" : "autocomplete-item disabled-item";
+                let clickAction = stock > 0 ? `onclick="seleccionarProductoDeLista('${p.id}')"` : "";
+                
+                l.append(`<div class="${itemClass}" ${clickAction}><div><strong>${p.name}</strong><small style="color:#666; margin-left:5px;">Cod: ${p.code}</small></div><div>${stockHtml}</div></div>`);
+            });
+        } else { l.hide(); }
+    } catch(e) { console.error(e); l.hide(); } 
+}
+function seleccionarProductoDeLista(id){ 
+    const p = searchResults[id]; 
+    if(p && (parseFloat(p.stock) || 0) > 0) agregarProductoATabla(p); 
+    else toastr.warning("Producto sin stock.");
+}
+
+function agregarProductoATabla(prod) {
+    $('#listaProductos').hide(); $('#nv_buscarProducto').val(''); 
+    if ($(`#nv_tablaProductos tr[data-id="${prod.id}"]`).length > 0) { toastr.error("Producto duplicado"); return; }
+    
+    // Validar Stock
+    const stock = parseFloat(prod.stock) || 0;
+    if (stock <= 0) { toastr.error("Stock insuficiente"); return; }
+
+    const rowId = Date.now();
+    
+    // Nueva Columna STOCK
+    const row = `<tr id="row_${rowId}" data-id="${prod.id}">
+        <td><div style="font-weight:700;color:#333;">${prod.code||''}</div><small style="color:#666;font-size:12px;">${prod.name}</small></td>
+        <td>${prod.unitOfMeasure||'UNI'}</td>
+        <td class="text-center" style="color: #000; font-weight:700;">${stock}</td>
+        
+        <td><div class="input-container"><input type="number" class="input-table qty" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"><span class="row-error-msg">Requerido</span></div></td>
+        <td><div class="input-container"><div style="display:flex;align-items:center;width:100%;"><span style="font-size:12px;margin-right:4px;">S/</span><input type="number" class="input-table val" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"></div><span class="row-error-msg">Requerido</span></div></td>
+        
+        <td class="text-right subtotal">S/ 0.00</td><td class="text-right igv">S/ 0.00</td><td class="text-right total" style="font-weight:bold;">S/ 0.00</td>
+        <td class="text-center"><button class="btn-delete-row" onclick="eliminarFila(${rowId})"><i class='bx bx-trash'></i></button></td></tr>`;
+    $('#nv_tablaProductos').append(row); calcularFila(rowId);
+}
+
+function calcularFila(rowId) {
+    const $row = $(`#row_${rowId}`);
+    let qty = parseFloat($row.find('.qty').val()); let unitPrice = parseFloat($row.find('.val').val());
+    if (isNaN(qty) || qty < 0) qty = 0; if (isNaN(unitPrice) || unitPrice < 0) unitPrice = 0;
+    
+    const total = qty * unitPrice;
+    const subtotal = total / 1.18;
+    const igv = total - subtotal;
+
+    $row.find('.subtotal').text(`S/ ${formatoMoneda(subtotal)}`); $row.find('.igv').text(`S/ ${formatoMoneda(igv)}`); $row.find('.total').text(`S/ ${formatoMoneda(total)}`);
+    calcularTotalesGlobales();
+}
+
+function calcularTotalesGlobales() {
+    let globalSubtotal = 0; let globalIGV = 0; let globalTotal = 0;
+    $('#nv_tablaProductos tr').each(function() {
+        const row = $(this);
+        const sub = parseFloat(row.find('.subtotal').text().replace('S/','').replace(/,/g,'')) || 0;
+        const igv = parseFloat(row.find('.igv').text().replace('S/','').replace(/,/g,'')) || 0;
+        const tot = parseFloat(row.find('.total').text().replace('S/','').replace(/,/g,'')) || 0;
+        globalSubtotal += sub; globalIGV += igv; globalTotal += tot;
+    });
+    $('#nv_txtSubTotal').text(`S/ ${formatoMoneda(globalSubtotal)}`); $('#nv_txtIGV').text(`S/ ${formatoMoneda(globalIGV)}`); $('#nv_txtNoGravado').text(`S/ 0.00`); $('#nv_txtTotal').text(`S/ ${formatoMoneda(globalTotal)}`);
+}
+function eliminarFila(id){ $(`#row_${id}`).remove(); calcularTotalesGlobales(); }
+
+function guardarVenta() {
+    let isValid = true;
+    ['nv_almacen', 'nv_tipoDoc', 'nv_moneda'].forEach(id => { if(!$(`#${id}`).val()) { $(`#${id}`).addClass('error'); $(`#${id}`).siblings('.error-message').addClass('show'); isValid = false; } });
+    if(!$('#nv_idCliente').val()){ $('#nv_buscarCliente').addClass('error'); $('#error_nv_cliente').addClass('show'); isValid = false; }
+    if(!isValid) { toastr.error("Corrija errores"); return; }
+    if($('#nv_tablaProductos tr').length === 0) { toastr.warning("Agregue productos"); return; }
+
+    let gravadoId = "";
+    const gravadoObj = igvListCache.find(x => x.description.toLowerCase().includes('gravado'));
+    gravadoId = gravadoObj ? gravadoObj.id : (igvListCache[0]?.id || "");
+
+    let pErr = false; const det = [];
+    $('#nv_tablaProductos tr').each(function() {
+        const r = $(this); const qI = r.find('.qty'); const vI = r.find('.val');
+        const q = parseFloat(qI.val()); const v = parseFloat(vI.val());
+        if(isNaN(q)||q<=0){ qI.addClass('error'); qI.siblings('.row-error-msg').text("Requerido (>0)").show(); pErr=true; }
+        if(isNaN(v)||v<=0){ vI.addClass('error'); vI.closest('.input-container').find('.row-error-msg').text("Requerido (>0)").show(); pErr=true; }
+        det.push({ productId: r.data('id'), igvTypeId: gravadoId, quantity: q, unitPrice: v });
+    });
+    if(pErr){ toastr.error("Revise casillas rojas"); return; }
+
+    const btn = $('#modalNuevaVenta .btn-save-modal'); const txt = btn.html(); btn.prop('disabled', true).html("<i class='bx bx-loader-alt bx-spin'></i> Guardando...");
+    
+    // JSON Payload limpio
+    const payload = {
+        warehouseId: $('#nv_almacen').val(), voucherTypeId: $('#nv_tipoDoc').val(), currencyId: $('#nv_moneda').val(), personId: $('#nv_idCliente').val(),
+        issueDate: new Date().toISOString(), details: det
+    };
+
+    fetch(EP_SALE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    .then(async res => {
+        let d = null; try{d=await res.json();}catch(e){}
+        if(res.ok){ toastr.success(d?.message||"Venta registrada"); cerrarModal('modalNuevaVenta'); fetchVentas(currentPage); }
+        else{ 
+            // Manejo de Array de Errores
+            if(d?.errors && Array.isArray(d.errors)) { d.errors.forEach(err => toastr.error(err)); } 
+            else if (d?.message) { toastr.error(d.message); } 
+            else { toastr.error("Error al guardar."); }
+            btn.prop('disabled',false).html(txt); 
+        }
+    }).catch(e=>{ toastr.error("Error conexión"); btn.prop('disabled',false).html(txt); });
+}
+
+async function abrirModalCrearProducto() { $('#modalCrearProducto').css('display','flex'); cargarDropdown(EP_UNIT,'np_unidad');cargarDropdown(EP_IGV,'np_igv');cargarDropdown(EP_CATEGORY,'np_categoria'); $('#formNuevoProducto')[0].reset(); $('.form-control').removeClass('error'); $('.error-message').removeClass('show'); }
+async function guardarNuevoProducto() { let v=true; ['np_codigo','np_nombre','np_unidad','np_igv','np_categoria','np_precioVenta'].forEach(i=>{if(!$(`#${i}`).val()){$(`#${i}`).addClass('error');$(`#error_${i}`).addClass('show');v=false;}else{$(`#${i}`).removeClass('error');$(`#error_${i}`).removeClass('show');}}); if(!v){toastr.error("Faltan datos");return;} const p={code:$('#np_codigo').val(),name:$('#np_nombre').val(),description:$('#np_descripcion').val(),unitOfMeasureId:$('#np_unidad').val(),igvTypeId:$('#np_igv').val(),categoryId:$('#np_categoria').val(),purchasePrice:parseFloat($('#np_precioCompra').val())||0,salePrice:parseFloat($('#np_precioVenta').val())||0}; try{const r=await fetch(EP_PRODUCT_CRUD,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){toastr.success("Producto creado");cerrarModal('modalCrearProducto');}else{const e=await r.json();toastr.error(e.message||"Error al crear");}}catch{toastr.error("Error conexión");} }
+function cerrarModal(id){$(`#${id}`).fadeOut(200);}
+async function abrirModalDetalle(id) { if(!id) return; $('#modalDetalleVenta').css('display','flex'); $('#modalLoader').show(); $('#modalContentBody').hide(); try { const r = await fetch(`${EP_SALE}/${id}`); const d = await r.json(); $('#mv_tipoDoc').text(d.voucherType||'Venta'); $('#mv_serieNumero').text(d.voucherNumber||'-'); $('#mv_fechaEmision').text(formatearFechaPeru(d.issueDate,false)); $('#mv_cliente').text(d.personName||'-'); const dn=d.personDocumentNumber||''; let dt=d.personDocumentType||(dn.length===11?'RUC':'DNI'); $('#mv_docCliente').text(dn?`${dt}: ${dn}`:'-'); $('#mv_almacen').text(d.warehouse||'-'); $('#mv_moneda').text(d.currency||'-'); $('#mv_fechaRegistro').text(formatearFechaPeru(d.createdDate||d.issueDate,true)); const t=$('#modalTableBody'); t.empty(); if(d.details){ d.details.forEach(i=>{ t.append(`<tr><td><span style="background:#f4f4f4;padding:2px 6px;border-radius:4px;border:1px solid #ddd;font-weight:600">${i.productCode||'-'}</span></td><td><strong>${i.productName||'-'}</strong></td><td>${i.unitOfMeasure||'UNI'}</td><td>${i.igvType||'-'}</td><td class="text-right">${(i.quantity||0).toFixed(2)}</td><td class="text-right">S/ ${formatoMoneda(i.unitPrice)}</td><td class="text-right">S/ ${formatoMoneda(i.amount)}</td><td class="text-right">S/ ${formatoMoneda(i.taxAmount)}</td><td class="text-right"><strong>S/ ${formatoMoneda(i.lineTotal)}</strong></td></tr>`); }); } $('#mv_totalNoGravado').text(`S/ ${formatoMoneda(d.exempt)}`); $('#mv_totalSubtotal').text(`S/ ${formatoMoneda(d.subTotal)}`); $('#mv_totalIgv').text(`S/ ${formatoMoneda(d.taxAmount)}`); $('#mv_totalFinal').text(`S/ ${formatoMoneda(d.total)}`); $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200); } catch(e) { toastr.error("Error al cargar"); cerrarModal('modalDetalleVenta'); } }
+$(window).click(e=>{if($(e.target).hasClass('modal-overlay'))$(e.target).fadeOut(200);});

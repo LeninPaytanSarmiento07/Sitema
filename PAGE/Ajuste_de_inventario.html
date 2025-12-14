@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes de Inventario</title>
+    
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="../CSS/Ajuste_de_inventario.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo"><i class='bx bxl-codepen'></i></div>
+        <h2>Sistema POS</h2>
+    </div>
+    <ul class="sidebar-links">
+        <li><a href="Productos.html"><i class='bx bx-cube icon'></i><span class="text">Productos</span></a></li>
+        <li><a href="Categorias.html"><i class='bx bx-purchase-tag-alt icon'></i><span class="text">Categorías</span></a></li>
+        <li><a href="Inventario.html"><i class='bx bx-clipboard icon'></i><span class="text">Inventario</span></a></li>
+        <li><a href="Movimientos.html"><i class='bx bx-transfer icon'></i><span class="text">Movimientos</span></a></li>
+        <li><a href="Ajuste_de_inventario.html" class="active"><i class='bx bx-slider-alt icon'></i><span class="text">Ajuste Inv.</span></a></li>
+        <li><a href="Almacenes.html"><i class='bx bx-building-house icon'></i><span class="text">Almacenes</span></a></li>
+        
+        <h4>Ventas y Compras</h4>
+        <li><a href="Compras.html"><i class='bx bx-cart-add icon'></i><span class="text">Compras</span></a></li>
+        <li><a href="Ventas.html"><i class='bx bx-cart-download icon'></i><span class="text">Ventas</span></a></li>
+        
+        <h4>Administración</h4>
+        <li><a href="Personas.html"><i class='bx bx-group icon'></i><span class="text">Personas</span></a></li>
+    </ul>
+</aside>
+
+<main class="main-content">
+    <div class="header">
+        <div class="header-content">
+            <h2>Ajustes de Inventario</h2>
+            <p class="subtitle">Regularización de stock físico vs sistema.</p>
+        </div>
+        <button class="btn-nuevo" onclick="abrirModalNuevoAjuste()">
+            ➕ Registrar Ajuste
+        </button>
+    </div>
+
+    <div class="search-container">
+        <div class="filters-wrapper">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar ajuste..." disabled title="Función no disponible aún">
+                <span class="search-icon">🔍</span>
+            </div>
+            <select id="warehouseSelect" class="warehouse-select"></select>
+        </div>
+    </div>
+
+    <div class="tabla-container">
+        <table class="tabla-datos">
+            <thead>
+                <tr>
+                    <th>FECHA REGISTRO</th>
+                    <th>ALMACÉN</th>
+                    <th>NÚMERO</th>
+                    <th>MOTIVO GENERAL</th>
+                    <th class="text-center">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody id="ajustesBody"></tbody>
+        </table>
+    </div>
+
+    <div class="pagination-container">
+        <div class="pagination-info">Mostrando <span id="lblStart">0</span> - <span id="lblEnd">0</span> de <span id="lblTotal">0</span> registros</div>
+        <div class="pagination-controls">
+            <div class="page-size-selector">
+                <label for="pageSizeSelect">Mostrar:</label>
+                <select id="pageSizeSelect" class="page-select">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="25">25</option>
+                </select>
+            </div>
+            <div class="pagination-buttons">
+                <button class="page-btn" id="btnFirst"><i class='bx bx-chevrons-left'></i></button>
+                <button class="page-btn" id="btnPrev"><i class='bx bx-chevron-left'></i></button>
+                <div class="page-number-box"><span id="btnPageDisplay">1 / 1</span></div>
+                <button class="page-btn" id="btnNext"><i class='bx bx-chevron-right'></i></button>
+                <button class="page-btn" id="btnLast"><i class='bx bx-chevrons-right'></i></button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="modalNuevoAjuste" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class='bx bx-edit-alt'></i> Registrar Ajuste de Inventario</h3>
+            <span class="close-modal" onclick="cerrarModal('modalNuevoAjuste')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group"><label>Almacén *</label><select id="na_almacen" class="form-control"></select><span class="error-message" id="error_na_almacen">Requerido</span></div>
+                <div class="form-group full-width" style="grid-column: span 2;">
+                    <label>Motivo General *</label>
+                    <input type="text" id="na_motivo" class="form-control" placeholder="Ej: Inventario anual, Pérdida, etc.">
+                    <span class="error-message" id="error_na_motivo">Requerido</span>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <div class="product-add-section">
+                <div class="autocomplete-wrapper" style="flex-grow: 1;">
+                    <span class="search-icon-inside">🔍</span>
+                    <input type="text" id="na_buscarProducto" class="form-control search-product-input" placeholder="Buscar producto para ajustar..." autocomplete="off">
+                    <div id="listaProductos" class="autocomplete-list"></div>
+                </div>
+            </div>
+
+            <div class="table-responsive-modal" style="margin-top: 15px; max-height: 350px; overflow-y: auto;">
+                <table class="modal-table">
+                    <thead>
+                        <tr>
+                            <th>PRODUCTO</th>
+                            <th class="text-center" style="width: 80px;">STOCK ACT.</th>
+                            <th style="width: 200px;">TIPO AJUSTE</th>
+                            <th style="width: 100px;">CANTIDAD</th>
+                            <th>MOTIVO ESPECÍFICO</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="na_tablaDetalles"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" onclick="cerrarModal('modalNuevoAjuste')">Cancelar</button>
+            <button class="btn-save-modal" onclick="guardarAjuste()"><i class='bx bx-save'></i> Guardar Ajuste</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalDetalleAjuste" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class='bx bx-detail'></i> Detalle del Ajuste</h3>
+            <span class="close-modal" onclick="cerrarModal('modalDetalleAjuste')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="loaderDetalle" class="loader-container"><div class="spinner"></div><p>Cargando...</p></div>
+            <div id="contenidoDetalle" style="display: none;">
+                <div class="info-grid">
+                    <div class="info-item"><label>NÚMERO</label><p id="da_numero" class="font-bold">-</p></div>
+                    <div class="info-item"><label>ALMACÉN</label><p id="da_almacen">-</p></div>
+                    <div class="info-item"><label>FECHA</label><p id="da_fecha">-</p></div>
+                    <div class="info-item"><label>MOTIVO GENERAL</label><p id="da_motivo">-</p></div>
+                </div>
+                <hr class="divider">
+                <div class="table-responsive-modal">
+                    <table class="modal-table">
+                        <thead>
+                            <tr>
+                                <th>CÓDIGO</th>
+                                <th>PRODUCTO</th>
+                                <th>UNIDAD</th>
+                                <th>TIPO</th>
+                                <th class="text-right">CANTIDAD</th>
+                                <th>MOTIVO ESPECIFICO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="da_tablaBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" onclick="cerrarModal('modalDetalleAjuste')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="../JS/Ajuste_de_inventario.js"></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Personas</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="../CSS/Personas.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo"><i class='bx bxl-codepen'></i></div>
+        <h2>Sistema POS</h2>
+    </div>
+    <ul class="sidebar-links">
+        <li><a href="Productos.html"><i class='bx bx-cube icon'></i><span class="text">Productos</span></a></li>
+        <li><a href="Categorias.html"><i class='bx bx-purchase-tag-alt icon'></i><span class="text">Categorías</span></a></li>
+        <li><a href="Inventario.html"><i class='bx bx-clipboard icon'></i><span class="text">Inventario</span></a></li>
+        <li><a href="Movimientos.html"><i class='bx bx-transfer icon'></i><span class="text">Movimientos</span></a></li>
+        <li><a href="Ajuste_de_inventario.html"><i class='bx bx-slider-alt icon'></i><span class="text">Ajuste Inv.</span></a></li>
+        <li><a href="Almacenes.html"><i class='bx bx-building-house icon'></i><span class="text">Almacenes</span></a></li>
+        <h4>Ventas y Compras</h4>
+        <li><a href="Compras.html"><i class='bx bx-cart-add icon'></i><span class="text">Compras</span></a></li>
+        <li><a href="Ventas.html"><i class='bx bx-cart-download icon'></i><span class="text">Ventas</span></a></li>
+        <h4>Administración</h4>
+        <li><a href="Personas.html" class="active"><i class='bx bx-group icon'></i><span class="text">Personas</span></a></li>
+    </ul>
+</aside>
+
+<main class="main-content">
+    <div class="header">
+        <div class="header-content">
+            <h2>Gestión de Personas</h2>
+            <p class="subtitle">Administra clientes, proveedores y empleados.</p>
+        </div>
+        <button class="btn-nuevo" id="btnNuevaPersona">➕ Nueva Persona</button>
+    </div>
+
+    <dialog class="modal-dialog" id="modalPersona">
+        <div id="toast-container-modal" class="toast-bottom-right"></div>
+        <div class="modal-header">
+            <h2 id="modalTitle">Nueva Persona</h2>
+            <button class="btn-close-modal" id="btnCerrarModal">×</button>
+        </div>
+        <form id="formPersona" novalidate>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tipoDocumento">Tipo Documento *</label>
+                        <select id="tipoDocumento" name="tipoDocumento">
+                            <option value="">Cargando...</option>
+                        </select>
+                        <span class="error-message" id="errorTipoDocumento">Requerido</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="numeroDocumento">N° Documento *</label>
+                        <input type="text" id="numeroDocumento" name="numeroDocumento" placeholder="Ej: 12345678" maxlength="15">
+                        <span class="error-message" id="errorNumeroDocumento">Documento inválido</span>
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="nombre">Nombre Completo *</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ingrese Nombres y Apellidos">
+                        <span class="error-message" id="errorNombre">El nombre es requerido</span>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input type="email" id="email" name="email" placeholder="ejemplo@correo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="text" id="telefono" name="telefono" placeholder="999 999 999">
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" name="direccion" placeholder="Dirección completa">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancelar" id="btnCancelar">Cancelar</button>
+                <button type="submit" class="btn-modal btn-guardar" id="btnGuardar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre o documento..." autocomplete="off">
+            <button class="clear-search" id="clearSearch">×</button>
+            <span class="search-icon">🔍</span>
+        </div>
+    </div>
+
+    <div class="tabla-container">
+        <table class="tabla-datos">
+            <thead>
+                <tr>
+                    <th>DOCUMENTO</th>
+                    <th>NOMBRE COMPLETO</th>
+                    <th>EMAIL</th>
+                    <th>TELÉFONO</th>
+                    <th style="width: 150px; text-align: center;">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="pagination-container">
+    <div class="pagination-info">
+        Mostrando <span id="rangeStart">0</span> - <span id="rangeEnd">0</span> de <span id="totalCount">0</span> productos
+    </div>
+    
+    <div class="pagination-wrapper">
+        <div class="page-size-selector">
+            <label for="pageSize">Mostrar:</label>
+            <select id="pageSize">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+            </select>
+        </div>
+        
+        <div class="pagination-buttons">
+            <button class="page-btn" id="btnFirst" title="Primera página">
+                <i class='bx bx-chevrons-left'></i>
+            </button>
+            <button class="page-btn" id="btnPrev" title="Anterior">
+                <i class='bx bx-chevron-left'></i>
+            </button>
+            
+            <div class="page-count-display">
+                <span id="currentPageDisplay">1</span> / <span id="totalPagesDisplay">1</span>
+            </div>
+            
+            <button class="page-btn" id="btnNext" title="Siguiente">
+                <i class='bx bx-chevron-right'></i>
+            </button>
+            <button class="page-btn" id="btnLast" title="Última página">
+                <i class='bx bx-chevrons-right'></i>
+            </button>
+        </div>
+    </div>
+</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="../JS/Personas.js"></script>
+</body>
+</html>

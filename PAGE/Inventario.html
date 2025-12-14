@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario Actual</title>
+    
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="../CSS/Inventario.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo"><i class='bx bxl-codepen'></i></div>
+        <h2>Sistema POS</h2>
+    </div>
+    <ul class="sidebar-links">
+        <li><a href="Productos.html"><i class='bx bx-cube icon'></i><span class="text">Productos</span></a></li>
+        <li><a href="Categorias.html"><i class='bx bx-purchase-tag-alt icon'></i><span class="text">Categorías</span></a></li>
+        <li><a href="Inventario.html" class="active"><i class='bx bx-clipboard icon'></i><span class="text">Inventario</span></a></li>
+        <li><a href="Movimientos.html"><i class='bx bx-transfer icon'></i><span class="text">Movimientos</span></a></li>
+        <li><a href="Ajuste_de_inventario.html"><i class='bx bx-slider-alt icon'></i><span class="text">Ajuste Inv.</span></a></li>
+        <li><a href="Almacenes.html"><i class='bx bx-building-house icon'></i><span class="text">Almacenes</span></a></li>
+        
+        <h4>Ventas y Compras</h4>
+        <li><a href="Compras.html"><i class='bx bx-cart-add icon'></i><span class="text">Compras</span></a></li>
+        <li><a href="Ventas.html"><i class='bx bx-cart-download icon'></i><span class="text">Ventas</span></a></li>
+        
+        <h4>Administración</h4>
+        <li><a href="Personas.html"><i class='bx bx-group icon'></i><span class="text">Personas</span></a></li>
+    </ul>
+</aside>
+
+<main class="main-content">
+    <div class="header">
+        <div class="header-content">
+            <h2>Inventario Actual</h2>
+            <p class="subtitle">Consulta de stock disponible por almacén.</p>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <div class="filters-wrapper">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar producto por nombre o código..." autocomplete="off">
+                <span class="search-icon">🔍</span>
+            </div>
+            <select id="warehouseSelect" class="warehouse-select"></select>
+        </div>
+    </div>
+
+    <div class="tabla-container">
+        <table class="tabla-datos">
+            <thead>
+                <tr>
+                    <th>CÓDIGO</th>
+                    <th>PRODUCTO</th>
+                    <th>UNIDAD</th>
+                    <th class="text-right">STOCK DISPONIBLE</th>
+                </tr>
+            </thead>
+            <tbody id="inventarioBody"></tbody>
+        </table>
+    </div>
+
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Mostrando <span id="lblStart">0</span> - <span id="lblEnd">0</span> de <span id="lblTotal">0</span> registros
+        </div>
+        <div class="pagination-controls">
+            <div class="page-size-selector">
+                <label for="pageSizeSelect">Mostrar:</label>
+                <select id="pageSizeSelect" class="page-select">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="25">25</option>
+                </select>
+            </div>
+            <div class="pagination-buttons">
+                <button class="page-btn" id="btnFirst"><i class='bx bx-chevrons-left'></i></button>
+                <button class="page-btn" id="btnPrev"><i class='bx bx-chevron-left'></i></button>
+                <div class="page-number-box"><span id="btnPageDisplay">1 / 1</span></div>
+                <button class="page-btn" id="btnNext"><i class='bx bx-chevron-right'></i></button>
+                <button class="page-btn" id="btnLast"><i class='bx bx-chevrons-right'></i></button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="../JS/Inventario.js"></script>
+</body>
+</html>

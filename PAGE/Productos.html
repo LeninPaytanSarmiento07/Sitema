@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos</title>
+    
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="../CSS/Productos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo"><i class='bx bxl-codepen'></i></div>
+        <h2>Sistema POS</h2>
+    </div>
+
+    <ul class="sidebar-links">
+        <li>
+            <a href="Productos.html" class="active">
+                <i class='bx bx-cube icon'></i>
+                <span class="text">Productos</span>
+            </a>
+        </li>
+        <li>
+            <a href="Categorias.html">
+                <i class='bx bx-purchase-tag-alt icon'></i>
+                <span class="text">Categorías</span>
+            </a>
+        </li>
+        <li>
+            <a href="Inventario.html">
+                <i class='bx bx-clipboard icon'></i>
+                <span class="text">Inventario</span>
+            </a>
+        </li>
+        <li>
+            <a href="Movimientos.html">
+                <i class='bx bx-transfer icon'></i>
+                <span class="text">Movimientos</span>
+            </a>
+        </li>
+        <li>
+            <a href="Ajuste_de_inventario.html">
+                <i class='bx bx-slider-alt icon'></i>
+                <span class="text">Ajuste Inv.</span>
+            </a>
+        </li>
+        <li>
+            <a href="Almacenes.html">
+                <i class='bx bx-building-house icon'></i>
+                <span class="text">Almacenes</span>
+            </a>
+        </li>
+        
+        <h4>Ventas y Compras</h4>
+        <li>
+            <a href="Compras.html">
+                <i class='bx bx-cart-add icon'></i>
+                <span class="text">Compras</span>
+            </a>
+        </li>
+        <li>
+            <a href="Ventas.html">
+                <i class='bx bx-cart-download icon'></i>
+                <span class="text">Ventas</span>
+            </a>
+        </li>
+        
+        <h4>Administración</h4>
+        <li>
+            <a href="Personas.html">
+                <i class='bx bx-group icon'></i>
+                <span class="text">Personas</span>
+            </a>
+        </li>
+    </ul>
+</aside>
+
+<main class="main-content">
+    <div class="header">
+        <div class="header-content">
+            <h2>Gestión de Productos</h2>
+            <p class="subtitle">Lista completa de productos del sistema.</p>
+        </div>
+        <button class="btn-nuevo-producto" id="btnNuevoProducto">
+            ➕ Nuevo Producto
+        </button>
+    </div>
+
+    <dialog class="modal-dialog" id="modalProducto">
+        <div id="toast-container-modal" class="toast-bottom-right"></div>
+        
+        <div class="modal-header">
+            <h2 id="modalTitle">Nuevo Producto</h2>
+            <button class="btn-close-modal" id="btnCerrarModal">×</button>
+        </div>
+        <form id="formProducto" novalidate>
+            <div class="modal-body">
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="codigo">Código *</label>
+                        <input type="text" id="codigo" name="codigo" placeholder="Ej: PROD001">
+                        <span class="error-message" id="errorCodigo">El código es requerido</span>
+                    </div>
+                </div>
+                
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Nombre del producto">
+                        <span class="error-message" id="errorNombre">El nombre es requerido</span>
+                    </div>
+                </div>
+                
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" name="descripcion" placeholder="Descripción breve"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="unidadMedida">Unidad de Medida *</label>
+                        <select id="unidadMedida" name="unidadMedida">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                        <span class="error-message" id="errorUnidadMedida">La unidad de medida es requerida</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipoIGV">Tipo de IGV *</label>
+                        <select id="tipoIGV" name="tipoIGV">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                        <span class="error-message" id="errorTipoIGV">El tipo de IGV es requerido</span>
+                    </div>
+                </div>
+                
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="categoria">Categoría *</label>
+                        <select id="categoria" name="categoria">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                        <span class="error-message" id="errorCategoria">La categoría es requerida</span>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="precioCompra">Precio de Compra</label>
+                        <div class="input-with-prefix" id="containerPrecioCompra">
+                            <span class="input-prefix">S/</span>
+                            <input type="number" id="precioCompra" name="precioCompra" min="0" step="0.50" placeholder="0" value="0">
+                        </div>
+                        <span class="error-message" id="errorPrecioCompra">El precio de compra no puede ser negativo</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="precioVenta">Precio de Venta *</label>
+                        <div class="input-with-prefix" id="containerPrecioVenta">
+                            <span class="input-prefix">S/</span>
+                            <input type="number" id="precioVenta" name="precioVenta" min="0.01" step="0.50" placeholder="0">
+                        </div>
+                        <span class="error-message" id="errorPrecioVenta">El precio de venta debe ser mayor a 0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancelar" id="btnCancelar">Cancelar</button>
+                <button type="submit" class="btn-modal btn-guardar" id="btnGuardar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div class="search-container">
+        <div class="search-box">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="Buscar por nombre o código de producto..."
+                autocomplete="off"
+            >
+            <button class="clear-search" id="clearSearch">×</button>
+            <span class="search-icon">🔍</span>
+        </div>
+    </div>
+
+    <div class="tabla-container">
+        <table class="tabla-productos">
+            <thead>
+                <tr>
+                    <th>CÓDIGO</th>
+                    <th>NOMBRE</th>
+                    <th>UNIDAD</th>
+                    <th>IGV</th>
+                    <th>CATEGORÍA</th>
+                    <th>PRECIO COMPRA</th>
+                    <th>PRECIO VENTA</th>
+                    <th>ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px;">
+                        <div class="loading">Cargando productos...</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Mostrando <span id="rangeStart">0</span> - <span id="rangeEnd">0</span> de <span id="totalCount">0</span> productos
+        </div>
+        
+        <div class="pagination-controls">
+            <div class="page-size-selector">
+                <label for="pageSize">Mostrar:</label>
+                <select id="pageSize">
+                    <option value="5"selected>5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            
+            <div class="pagination-buttons">
+                <button class="page-btn" id="btnFirst" title="Primera página">⏮</button>
+                <button class="page-btn" id="btnPrev" title="Anterior">◀</button>
+                <div class="page-number">
+                    <span id="currentPageDisplay">1</span> / <span id="totalPagesDisplay">1</span>
+                </div>
+                <button class="page-btn" id="btnNext" title="Siguiente">▶</button>
+                <button class="page-btn" id="btnLast" title="Última página">⏭</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="../JS/Productos.js"></script>
+
+
+</body>
+</html>
