@@ -8,6 +8,9 @@ let pageSize = 10;
 let totalPages = 1;
 let searchTerm = "";
 let warehouseId = "";
+// Nuevas variables para fecha
+let startDate = "";
+let endDate = "";
 
 toastr.options = { 
     "closeButton": true, 
@@ -52,6 +55,52 @@ $(document).ready(function() {
         warehouseId = $(this).val(); 
         currentPage = 1; 
         fetchMovimientos(currentPage); 
+    });
+
+    // ==========================================
+    // FILTROS DE FECHA (Lógica X)
+    // ==========================================
+    
+    // Cambio en Fecha Inicio
+    $('#startDate').on('change', function() {
+        startDate = $(this).val();
+        
+        // Mostrar/Ocultar X
+        if(startDate) $('#clearStartDate').show();
+        else $('#clearStartDate').hide();
+
+        currentPage = 1;
+        fetchMovimientos(currentPage);
+    });
+
+    // Cambio en Fecha Fin
+    $('#endDate').on('change', function() {
+        endDate = $(this).val();
+
+        // Mostrar/Ocultar X
+        if(endDate) $('#clearEndDate').show();
+        else $('#clearEndDate').hide();
+
+        currentPage = 1;
+        fetchMovimientos(currentPage);
+    });
+
+    // Botón X Fecha Inicio
+    $('#clearStartDate').click(function() {
+        $('#startDate').val('');
+        startDate = "";
+        $(this).hide(); // Ocultar X
+        currentPage = 1;
+        fetchMovimientos(currentPage);
+    });
+
+    // Botón X Fecha Fin
+    $('#clearEndDate').click(function() {
+        $('#endDate').val('');
+        endDate = "";
+        $(this).hide(); // Ocultar X
+        currentPage = 1;
+        fetchMovimientos(currentPage);
     });
 });
 
@@ -104,8 +153,9 @@ async function fetchMovimientos(page) {
     try {
         if(!warehouseId) throw new Error("No se ha seleccionado un almacén");
 
-        // Construcción URL
-        const url = `${EP_MOVEMENTS}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}`;
+        // Construcción URL con fechas
+        const url = `${EP_MOVEMENTS}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
+        
         const response = await fetch(url); 
         
         if (!response.ok) throw new Error("Error en la respuesta del servidor");

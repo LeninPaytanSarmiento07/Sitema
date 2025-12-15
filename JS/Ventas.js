@@ -10,6 +10,8 @@ const EP_PRODUCT_CRUD = `${API_BASE}/Product`;
 const EP_UNIT = `${API_BASE}/UnitOfMeasure`;
 const EP_IGV = `${API_BASE}/IGVType`;
 const EP_CATEGORY = `${API_BASE}/Category`;
+// NUEVO: Endpoint para tipos de documento (Crear Cliente)
+const EP_DOC_TYPES = `${API_BASE}/DocumentType/select`;
 
 let currentPage = 1;
 let pageSize = 10;
@@ -59,6 +61,18 @@ $(document).ready(function() {
     });
 
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
+
+    // NUEVO: Validación dinámica para Crear Cliente
+    $('#ncli_numeroDoc').on('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, ''); // Solo números
+        validarReglasDocumento();
+    });
+    
+    $('#ncli_tipoDoc').on('change', function() {
+        $('#ncli_numeroDoc').val('').focus();
+        $('#ncli_numeroDoc').removeClass('error');
+        $('#error_ncli_numeroDoc').removeClass('show');
+    });
 });
 
 function formatoMoneda(v) { if (v == null || isNaN(v)) return "0.00"; return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -101,7 +115,6 @@ function irAPagina(p) { if (p >= 1 && p <= totalPages) fetchVentas(p); }
 
 async function abrirModalNuevaVenta() {
     $('#modalNuevaVenta').css('display', 'flex');
-    // Sin fecha, ni serie, ni numero
     const $btn = $('#modalNuevaVenta .btn-save-modal');
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Venta");
     cargarDropdown(EP_WAREHOUSE, 'nv_almacen'); cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); cargarDropdown(EP_CURRENCY, 'nv_moneda');
@@ -214,7 +227,6 @@ function guardarVenta() {
 
     const btn = $('#modalNuevaVenta .btn-save-modal'); const txt = btn.html(); btn.prop('disabled', true).html("<i class='bx bx-loader-alt bx-spin'></i> Guardando...");
     
-    // JSON Payload limpio
     const payload = {
         warehouseId: $('#nv_almacen').val(), voucherTypeId: $('#nv_tipoDoc').val(), currencyId: $('#nv_moneda').val(), personId: $('#nv_idCliente').val(),
         issueDate: new Date().toISOString(), details: det
@@ -225,13 +237,123 @@ function guardarVenta() {
         let d = null; try{d=await res.json();}catch(e){}
         if(res.ok){ toastr.success(d?.message||"Venta registrada"); cerrarModal('modalNuevaVenta'); fetchVentas(currentPage); }
         else{ 
-            // Manejo de Array de Errores
             if(d?.errors && Array.isArray(d.errors)) { d.errors.forEach(err => toastr.error(err)); } 
             else if (d?.message) { toastr.error(d.message); } 
             else { toastr.error("Error al guardar."); }
             btn.prop('disabled',false).html(txt); 
         }
     }).catch(e=>{ toastr.error("Error conexión"); btn.prop('disabled',false).html(txt); });
+}
+
+// 4. NUEVO MODAL CREAR CLIENTE (Lógica clonada de Personas)
+async function abrirModalCrearCliente() {
+    $('#modalCrearCliente').css('display', 'flex');
+    $('#formNuevoCliente')[0].reset();
+    $('.form-control').removeClass('error');
+    $('.error-message').removeClass('show');
+    
+    try {
+        const res = await fetch(EP_DOC_TYPES);
+        const data = await res.json();
+        const $sel = $('#ncli_tipoDoc'); $sel.empty();
+        $sel.append('<option value="">Seleccionar...</option>');
+        
+        data.forEach(item => {
+            const txt = item.description || item.name || item.text;
+            const safeTxt = (txt || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            $sel.append(`<option value="${item.id}" data-name="${safeTxt}">${txt}</option>`);
+        });
+    } catch(e) { console.error(e); }
+}
+
+function validarReglasDocumento() {
+    const select = document.getElementById('ncli_tipoDoc');
+    const input = document.getElementById('ncli_numeroDoc');
+    const errorSpan = document.getElementById('error_ncli_numeroDoc');
+    
+    if(!select || !input) return true;
+
+    const selectedOption = select.options[select.selectedIndex];
+    const tipoNombre = selectedOption ? (selectedOption.getAttribute('data-name') || '') : '';
+    const valor = input.value.trim();
+
+    input.classList.remove('error');
+    errorSpan.classList.remove('show');
+
+    if (!valor) return false;
+
+    if (tipoNombre.includes('DNI') && valor.length !== 8) {
+        input.classList.add('error');
+        errorSpan.textContent = `Debe tener 8 dígitos`;
+        errorSpan.classList.add('show');
+        return false;
+    } 
+    else if (tipoNombre.includes('RUC') && valor.length !== 11) {
+        input.classList.add('error');
+        errorSpan.textContent = `Debe tener 11 dígitos`;
+        errorSpan.classList.add('show');
+        return false;
+    }
+    return true;
+}
+
+async function guardarNuevoCliente() {
+    let isValid = true;
+    ['ncli_tipoDoc', 'ncli_numeroDoc', 'ncli_nombre'].forEach(id => {
+        if(!$(`#${id}`).val()) { $(`#${id}`).addClass('error'); $(`#error_${id}`).addClass('show'); isValid = false; }
+    });
+
+    if(!isValid || !validarReglasDocumento()) {
+        toastr.error("Complete el formulario correctamente");
+        return;
+    }
+
+    const payload = {
+        documentTypeId: $('#ncli_tipoDoc').val(),
+        documentNumber: $('#ncli_numeroDoc').val().trim(),
+        name: $('#ncli_nombre').val().trim(),
+        email: $('#ncli_email').val().trim() || null,
+        phone: $('#ncli_telefono').val().trim() || null,
+        address: $('#ncli_direccion').val().trim() || null
+    };
+
+    const $btn = $('#modalCrearCliente .btn-save-modal');
+    $btn.prop('disabled', true).text('Guardando...');
+
+    try {
+        const r = await fetch(EP_PERSON, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        const d = await r.json();
+
+        if(r.ok) {
+            toastr.success("Cliente registrado exitosamente");
+            cerrarModal('modalCrearCliente');
+            
+            // AUTO-SELECCIONAR EL CLIENTE CREADO
+            const docLabel = $("#ncli_tipoDoc option:selected").text();
+            // Si la API devuelve el ID en d.id, lo usamos.
+            if(d.id) {
+                seleccionarCliente(d.id, `${docLabel}: ${payload.documentNumber} - ${payload.name}`);
+            } else {
+                // Si no, forzamos búsqueda rápida
+                buscarPersona(payload.documentNumber);
+            }
+
+        } else {
+            if(d.errors) d.errors.forEach(e => toastr.error(e));
+            else if(d.message) toastr.error(d.message);
+            else toastr.error("Error al guardar cliente");
+        }
+    } catch(e) {
+        toastr.error("Error de conexión");
+        console.error(e);
+    } finally {
+        $btn.prop('disabled', false).html('Guardar');
+    }
 }
 
 async function abrirModalCrearProducto() { $('#modalCrearProducto').css('display','flex'); cargarDropdown(EP_UNIT,'np_unidad');cargarDropdown(EP_IGV,'np_igv');cargarDropdown(EP_CATEGORY,'np_categoria'); $('#formNuevoProducto')[0].reset(); $('.form-control').removeClass('error'); $('.error-message').removeClass('show'); }

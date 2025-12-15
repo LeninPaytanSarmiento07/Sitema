@@ -14,6 +14,10 @@ let adjustmentTypesCache = [];
 let searchResults = {};
 let searchTimer = null;
 
+// NUEVAS VARIABLES PARA FECHA
+let startDate = "";
+let endDate = "";
+
 toastr.options = { "closeButton": true, "positionClass": "toast-bottom-right", "timeOut": "5000", "preventDuplicates": false };
 
 $(document).ready(function() {
@@ -28,7 +32,7 @@ $(document).ready(function() {
     
     $('#warehouseSelect').on('change', function() { warehouseId = $(this).val(); currentPage = 1; fetchAjustes(currentPage); });
 
-    // Buscador Modal
+    // BUSCADOR EN MODAL
     $('#na_buscarProducto').on('input', function() {
         const val = $(this).val().trim();
         const modalWarehouse = $('#na_almacen').val();
@@ -47,6 +51,47 @@ $(document).ready(function() {
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
     
     $('#na_almacen').on('change', function() { $('#na_tablaDetalles').empty(); $('#na_buscarProducto').val(''); });
+
+    // ==========================================
+    // LÓGICA DE FILTROS DE FECHA (CON X)
+    // ==========================================
+    
+    $('#startDate').on('change', function() {
+        startDate = $(this).val();
+        // Mostrar/Ocultar X
+        if(startDate) $('#clearStartDate').show();
+        else $('#clearStartDate').hide();
+        
+        currentPage = 1;
+        fetchAjustes(currentPage);
+    });
+
+    $('#endDate').on('change', function() {
+        endDate = $(this).val();
+        // Mostrar/Ocultar X
+        if(endDate) $('#clearEndDate').show();
+        else $('#clearEndDate').hide();
+
+        currentPage = 1;
+        fetchAjustes(currentPage);
+    });
+
+    // Botones "X" para limpiar
+    $('#clearStartDate').click(function() {
+        $('#startDate').val('');
+        startDate = "";
+        $(this).hide(); // Ocultar X
+        currentPage = 1;
+        fetchAjustes(currentPage);
+    });
+
+    $('#clearEndDate').click(function() {
+        $('#endDate').val('');
+        endDate = "";
+        $(this).hide(); // Ocultar X
+        currentPage = 1;
+        fetchAjustes(currentPage);
+    });
 });
 
 function formatearFecha(f) { 
@@ -84,7 +129,10 @@ async function fetchAjustes(page) {
     
     try {
         if(!warehouseId) throw new Error("Sin almacén");
-        const url = `${EP_ADJUSTMENT}?pageNumber=${page}&pageSize=${pageSize}&warehouseId=${warehouseId}`;
+        
+        // URL ACTUALIZADA CON STARTDATE Y ENDDATE
+        const url = `${EP_ADJUSTMENT}?pageNumber=${page}&pageSize=${pageSize}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
+        
         const r = await fetch(url);
         if (!r.ok) throw new Error("Error del servidor");
         const d = await r.json();
@@ -112,26 +160,21 @@ async function fetchAjustes(page) {
 function cambiarPagina(d) { const p = currentPage + d; if (p >= 1 && p <= totalPages) fetchAjustes(p); }
 function irAPagina(p) { if (p >= 1 && p <= totalPages) fetchAjustes(p); }
 
-// 3. DETALLE AJUSTE (USANDO EL LINK ESPECIFICO QUE PEDISTE)
+// 3. DETALLE AJUSTE
 async function verDetalle(id) {
     $('#modalDetalleAjuste').css('display', 'flex');
     $('#loaderDetalle').show(); $('#contenidoDetalle').hide();
     
     try {
-        // Link exacto: .../api/InventoryAdjustment/{id}
         const r = await fetch(`${EP_ADJUSTMENT}/${id}`);
-        
         if (!r.ok) throw new Error("No se pudo obtener el detalle");
-        
         const d = await r.json();
         
-        // Llenar cabecera del modal
         $('#da_numero').text(d.number || '-'); 
         $('#da_almacen').text(d.warehouse || '-');
         $('#da_fecha').text(formatearFecha(d.createdDate)); 
         $('#da_motivo').text(d.reason || '-');
         
-        // Llenar tabla de detalles
         const $tb = $('#da_tablaBody'); $tb.empty();
         if(d.details && Array.isArray(d.details)){
             d.details.forEach(det => {
@@ -255,7 +298,6 @@ function guardarAjuste() {
             isValid = false;
         }
 
-        // VALIDACIÓN DE STOCK: Si es "Disminuir" o "Salida" y Cantidad > Stock
         if ((typeText.includes('disminuir') || typeText.includes('salida')) && qty > currentStock) {
             qtyInput.addClass('error');
             toastr.error(`Stock insuficiente para ${row.find('div').text()} (Stock: ${currentStock})`);

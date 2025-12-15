@@ -47,7 +47,26 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="Buscar por producto..." autocomplete="off">
                 <span class="search-icon" id="btnSearch" style="cursor: pointer;">🔍</span>
             </div>
-            <select id="warehouseSelect" class="warehouse-select"></select>
+            
+            <div class="filter-group">
+                 <select id="warehouseSelect" class="warehouse-select"></select>
+            </div>
+
+            <div class="filter-group">
+                <label for="startDate">Fecha de inicio</label>
+                <div class="date-container">
+                    <input type="date" id="startDate" class="date-select" title="Fecha Inicio">
+                    <span class="btn-clear-date" id="clearStartDate" title="Limpiar fecha">✖</span>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label for="endDate">Fecha Fin</label>
+                <div class="date-container">
+                    <input type="date" id="endDate" class="date-select" title="Fecha Fin">
+                    <span class="btn-clear-date" id="clearEndDate" title="Limpiar fecha">✖</span>
+                </div>
+            </div>
         </div>
     </div>
 

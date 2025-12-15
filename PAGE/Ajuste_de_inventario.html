@@ -46,11 +46,27 @@
 
     <div class="search-container">
         <div class="filters-wrapper">
-            <div class="search-box">
-                <input type="text" id="searchInput" class="search-input" placeholder="Buscar ajuste..." disabled title="Función no disponible aún">
-                <span class="search-icon">🔍</span>
+            
+            <div class="filter-group">
+                <select id="warehouseSelect" class="warehouse-select"></select>
             </div>
-            <select id="warehouseSelect" class="warehouse-select"></select>
+
+            <div class="filter-group">
+                <label>Fecha de inicio</label>
+                <div class="date-container">
+                    <input type="date" id="startDate" class="date-select">
+                    <span class="btn-clear-date" id="clearStartDate" title="Limpiar fecha">✖</span>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Fecha Fin</label>
+                <div class="date-container">
+                    <input type="date" id="endDate" class="date-select">
+                    <span class="btn-clear-date" id="clearEndDate" title="Limpiar fecha">✖</span>
+                </div>
+            </div>
+
         </div>
     </div>
 

@@ -109,11 +109,14 @@
                 
                 <div class="form-group full-width" style="grid-column: span 3;">
                     <label>Cliente *</label>
-                    <div class="autocomplete-wrapper search-with-clear">
-                        <input type="text" id="nv_buscarCliente" class="form-control" placeholder="Buscar cliente por nombre o documento..." autocomplete="off">
-                        <i class='bx bx-x clear-autocomplete' id="btnLimpiarCliente"></i>
-                        <div id="listaClientes" class="autocomplete-list"></div>
-                        <input type="hidden" id="nv_idCliente">
+                    <div style="display: flex; gap: 8px;">
+                        <div class="autocomplete-wrapper search-with-clear" style="flex-grow: 1;">
+                            <input type="text" id="nv_buscarCliente" class="form-control" placeholder="Buscar cliente por nombre o documento..." autocomplete="off">
+                            <i class='bx bx-x clear-autocomplete' id="btnLimpiarCliente"></i>
+                            <div id="listaClientes" class="autocomplete-list"></div>
+                            <input type="hidden" id="nv_idCliente">
+                        </div>
+                        <button class="btn-create-prod" onclick="abrirModalCrearCliente()" style="padding: 0 20px;">+ Nueva Persona</button>
                     </div>
                     <span class="error-message" id="error_nv_cliente">Seleccione un cliente</span>
                 </div>
@@ -177,6 +180,55 @@
         <div class="modal-header"><h3><i class='bx bx-detail'></i> Detalles de Venta</h3><span class="close-modal" onclick="cerrarModal('modalDetalleVenta')">&times;</span></div>
         <div class="modal-body"><div id="modalLoader" class="loader-container"><div class="spinner"></div><p>Cargando detalles...</p></div><div id="modalContentBody" style="display: none;"><div class="info-grid"><div class="info-item"><label>DOCUMENTO</label><div class="doc-badge"><span id="mv_tipoDoc" class="badge-dark">-</span><span id="mv_serieNumero" class="badge-number-modal">-</span></div></div><div class="info-item"><label>FECHA DE EMISIÓN</label><p id="mv_fechaEmision">-</p></div><div class="info-item"><label>CLIENTE</label><p id="mv_cliente" class="font-bold">-</p><small id="mv_docCliente" style="color:#777">-</small></div><div class="info-item"><label>ALMACÉN</label><p id="mv_almacen">-</p></div><div class="info-item"><label>MONEDA</label><p id="mv_moneda">-</p></div><div class="info-item"><label>FECHA DE REGISTRO</label><p id="mv_fechaRegistro">-</p></div></div><hr style="border:0; border-top:1px solid #eee; margin:20px 0;"><h4 style="margin-bottom:15px; font-size:14px; color:#333;"><i class='bx bx-list-ul'></i> Detalle de Productos</h4><div class="table-responsive-modal"><table class="modal-table"><thead><tr><th>CÓDIGO</th><th>PRODUCTO</th><th>UNIDAD</th><th>TIPO IGV</th><th class="text-right">CANTIDAD</th><th class="text-right">PRECIO UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th></tr></thead><tbody id="modalTableBody"></tbody></table></div><div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="mv_totalNoGravado">S/ 0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="mv_totalSubtotal">S/ 0.00</span></div><div class="total-row"><span>IGV:</span><span id="mv_totalIgv">S/ 0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="mv_totalFinal">S/ 0.00</span></div></div></div></div></div>
         <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalDetalleVenta')">Cerrar</button></div>
+    </div>
+</div>
+
+<div id="modalCrearCliente" class="modal-overlay" style="z-index: 2200;">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3>Nuevo Cliente</h3>
+            <span class="close-modal" onclick="cerrarModal('modalCrearCliente')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formNuevoCliente">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tipo Documento *</label>
+                        <select id="ncli_tipoDoc" class="form-control"></select>
+                        <span class="error-message" id="error_ncli_tipoDoc">Requerido</span>
+                    </div>
+                    <div class="form-group full-width" style="grid-column: span 2;">
+                        <label>N° Documento *</label>
+                        <input type="text" id="ncli_numeroDoc" class="form-control" placeholder="Ej: 12345678" maxlength="15">
+                        <span class="error-message" id="error_ncli_numeroDoc">Inválido</span>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Nombre Completo / Razón Social *</label>
+                        <input type="text" id="ncli_nombre" class="form-control" placeholder="Ingrese Nombre o Razón Social">
+                        <span class="error-message" id="error_ncli_nombre">Requerido</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="ncli_email" class="form-control" placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Teléfono</label>
+                        <input type="text" id="ncli_telefono" class="form-control" placeholder="999 999 999">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Dirección</label>
+                        <input type="text" id="ncli_direccion" class="form-control" placeholder="Dirección completa">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" onclick="cerrarModal('modalCrearCliente')">Cancelar</button>
+            <button class="btn-save-modal" onclick="guardarNuevoCliente()">Guardar</button>
+        </div>
     </div>
 </div>
 

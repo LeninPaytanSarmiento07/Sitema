@@ -35,13 +35,56 @@ a { text-decoration: none; }
 
 /* FILTROS */
 .search-container { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.filters-wrapper { display: flex; gap: 15px; align-items: center; }
+
+.filters-wrapper { 
+    display: flex; 
+    gap: 15px; 
+    align-items: flex-end;
+    flex-wrap: wrap; 
+}
+
 .search-box { position: relative; flex: 1; max-width: 500px; }
 .search-input { width: 100%; padding: 10px 40px 10px 15px; border: 2px solid #eee; border-radius: 6px; outline: none; transition: border-color 0.3s; }
 .search-input:focus { border-color: #3d4f5d; }
 .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #999; }
+
+/* ESTILOS PARA FECHAS CON X */
+.filter-group { display: flex; flex-direction: column; }
+.filter-group label { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 5px; margin-left: 2px; }
+
+.date-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.date-select { 
+    padding: 9px 15px; 
+    border: 2px solid #eee; 
+    border-radius: 6px; 
+    background-color: white; 
+    outline: none; 
+    cursor: pointer; 
+    color: #555; 
+    transition: border-color 0.3s; 
+    font-family: inherit;
+}
+.date-select:focus { border-color: #3d4f5d; }
+
 .warehouse-select { padding: 10px 15px; border: 2px solid #eee; border-radius: 6px; background-color: white; min-width: 220px; outline: none; cursor: pointer; color: #555; transition: border-color 0.3s; }
 .warehouse-select:focus { border-color: #3d4f5d; }
+
+/* BOTÓN X OCULTO POR DEFECTO */
+.btn-clear-date {
+    display: none; /* <--- CAMBIO AQUÍ */
+    color: #ef4444; 
+    font-weight: 800;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    user-select: none;
+}
+.btn-clear-date:hover { transform: scale(1.2); }
 
 /* TABLA */
 .tabla-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }

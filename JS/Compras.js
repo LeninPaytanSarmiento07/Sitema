@@ -10,6 +10,8 @@ const EP_PRODUCT = `${API_BASE}/Product`;
 const EP_UNIT = `${API_BASE}/UnitOfMeasure`;
 const EP_IGV = `${API_BASE}/IGVType`;
 const EP_CATEGORY = `${API_BASE}/Category`;
+// NUEVO ENDPOINT PARA TIPOS DE DOCUMENTO (Para crear proveedor)
+const EP_DOC_TYPES = `${API_BASE}/DocumentType/select`;
 
 let currentPage = 1;
 let pageSize = 10;
@@ -70,6 +72,18 @@ $(document).ready(function() {
     });
 
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
+
+    // VALIDACIÓN DINÁMICA DE DOCUMENTO EN MODAL PROVEEDOR (Lógica de Personas.js)
+    $('#nprov_numeroDoc').on('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, ''); // Solo números
+        validarReglasDocumento();
+    });
+    
+    $('#nprov_tipoDoc').on('change', function() {
+        $('#nprov_numeroDoc').val('').focus();
+        $('#nprov_numeroDoc').removeClass('error');
+        $('#error_nprov_numeroDoc').removeClass('show');
+    });
 });
 
 // FUNCIONES AUXILIARES DE FORMATO
@@ -390,9 +404,131 @@ async function guardarNuevoProducto() {
     const p={code:$('#np_codigo').val(),name:$('#np_nombre').val(),description:$('#np_descripcion').val(),unitOfMeasureId:$('#np_unidad').val(),igvTypeId:$('#np_igv').val(),categoryId:$('#np_categoria').val(),purchasePrice:parseFloat($('#np_precioCompra').val())||0,salePrice:parseFloat($('#np_precioVenta').val())||0};
     try{const r=await fetch(EP_PRODUCT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){toastr.success("Producto creado.");cerrarModal('modalCrearProducto');}else{const e=await r.json();toastr.error(e.message||"Error al crear.");}}catch{toastr.error("Error conexión.");}
 }
+
+// 5. NUEVO SUB-MODAL PROVEEDOR (Lógica extraída de Personas)
+async function abrirModalCrearProveedor() {
+    $('#modalCrearProveedor').css('display', 'flex');
+    $('#formNuevoProveedor')[0].reset();
+    $('.form-control').removeClass('error');
+    $('.error-message').removeClass('show');
+    
+    // Cargar tipos de documento para el modal
+    try {
+        const res = await fetch(EP_DOC_TYPES);
+        const data = await res.json();
+        const $sel = $('#nprov_tipoDoc'); $sel.empty();
+        $sel.append('<option value="">Seleccionar...</option>');
+        
+        data.forEach(item => {
+            const txt = item.description || item.name || item.text;
+            // Guardar info para validar
+            const safeTxt = (txt || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            $sel.append(`<option value="${item.id}" data-name="${safeTxt}">${txt}</option>`);
+        });
+    } catch(e) { console.error(e); }
+}
+
+function validarReglasDocumento() {
+    const select = document.getElementById('nprov_tipoDoc');
+    const input = document.getElementById('nprov_numeroDoc');
+    const errorSpan = document.getElementById('error_nprov_numeroDoc');
+    
+    if(!select || !input) return true;
+
+    const selectedOption = select.options[select.selectedIndex];
+    const tipoNombre = selectedOption ? (selectedOption.getAttribute('data-name') || '') : '';
+    const valor = input.value.trim();
+
+    input.classList.remove('error');
+    errorSpan.classList.remove('show');
+
+    if (!valor) return false;
+
+    if (tipoNombre.includes('DNI') && valor.length !== 8) {
+        input.classList.add('error');
+        errorSpan.textContent = `Debe tener 8 dígitos`;
+        errorSpan.classList.add('show');
+        return false;
+    } 
+    else if (tipoNombre.includes('RUC') && valor.length !== 11) {
+        input.classList.add('error');
+        errorSpan.textContent = `Debe tener 11 dígitos`;
+        errorSpan.classList.add('show');
+        return false;
+    }
+    return true;
+}
+
+async function guardarNuevoProveedor() {
+    // Validar campos básicos
+    let isValid = true;
+    ['nprov_tipoDoc', 'nprov_numeroDoc', 'nprov_nombre'].forEach(id => {
+        if(!$(`#${id}`).val()) { $(`#${id}`).addClass('error'); $(`#error_${id}`).addClass('show'); isValid = false; }
+    });
+
+    if(!isValid || !validarReglasDocumento()) {
+        toastr.error("Complete el formulario correctamente");
+        return;
+    }
+
+    const payload = {
+        documentTypeId: $('#nprov_tipoDoc').val(),
+        documentNumber: $('#nprov_numeroDoc').val().trim(),
+        name: $('#nprov_nombre').val().trim(),
+        email: $('#nprov_email').val().trim() || null,
+        phone: $('#nprov_telefono').val().trim() || null,
+        address: $('#nprov_direccion').val().trim() || null
+    };
+
+    const $btn = $('#modalCrearProveedor .btn-save-modal');
+    $btn.prop('disabled', true).text('Guardando...');
+
+    try {
+        const r = await fetch(EP_PERSON, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        const d = await r.json();
+
+        if(r.ok) {
+            toastr.success("Proveedor registrado exitosamente");
+            cerrarModal('modalCrearProveedor');
+            
+            // AUTO-SELECCIONAR el proveedor recién creado en la compra
+            const docLabel = $("#nprov_tipoDoc option:selected").text();
+            // Suponemos que la API retorna el ID del objeto creado, si no, habría que buscarlo. 
+            // Si 'd' es el ID string o un objeto con ID:
+            const newId = d.id || (typeof d === 'string' ? d : null); 
+            
+            // Si la API no devuelve ID directo, solo cerramos. Pero idealmente seleccionamos.
+            // Para asegurar, simulamos la selección con los datos que tenemos:
+            // Nota: Esto funciona visualmente, pero necesitamos el ID real para el hidden input.
+            // Si tu API retorna el objeto creado:
+            if(d.id) {
+                seleccionarProveedor(d.id, payload.name, docLabel, payload.documentNumber);
+            } else {
+                // Si la API solo devuelve un mensaje, forzamos una búsqueda rápida para obtener el ID
+                 buscarPersona(payload.documentNumber); // Esto llenará la lista y el usuario podrá hacer click rápido
+            }
+
+        } else {
+            if(d.errors) d.errors.forEach(e => toastr.error(e));
+            else if(d.message) toastr.error(d.message);
+            else toastr.error("Error al guardar proveedor");
+        }
+    } catch(e) {
+        toastr.error("Error de conexión");
+        console.error(e);
+    } finally {
+        $btn.prop('disabled', false).html('Guardar');
+    }
+}
+
 function cerrarModal(id){$(`#${id}`).fadeOut(200);}
 
-// 5. DETALLES
+// 6. DETALLES
 async function abrirModalDetalle(purchaseId) {
     if(!purchaseId) return;
     $('#modalDetalle').css('display', 'flex'); $('#modalLoader').show(); $('#modalContentBody').hide();  

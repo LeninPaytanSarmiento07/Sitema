@@ -115,7 +115,21 @@
                 <div class="form-group"><label>Serie *</label><input type="text" id="nc_serie" class="form-control" placeholder="Ej: F001" maxlength="4"><span class="error-message" id="error_nc_serie">4 dígitos obligatorios</span></div>
                 <div class="form-group"><label>Número *</label><input type="text" id="nc_numero" class="form-control" placeholder="Ej: 12345" maxlength="8"><span class="error-message" id="error_nc_numero">Requerido (Máx 8)</span></div>
                 <div class="form-group"><label>Fecha de Emisión *</label><input type="date" id="nc_fecha" class="form-control"><span class="error-message" id="error_nc_fecha">Requerido</span></div>
-                <div class="form-group full-width"><label>Proveedor *</label><div class="autocomplete-wrapper search-with-clear"><input type="text" id="nc_buscarProveedor" class="form-control" placeholder="Buscar proveedor por nombre o documento..." autocomplete="off"><i class='bx bx-x clear-autocomplete' id="btnLimpiarProveedor"></i><div id="listaProveedores" class="autocomplete-list"></div><input type="hidden" id="nc_idProveedor"></div><span class="error-message" id="error_nc_proveedor">Debe seleccionar un proveedor</span></div>
+                
+                <div class="form-group full-width">
+                    <label>Proveedor *</label>
+                    <div style="display: flex; gap: 8px;">
+                        <div class="autocomplete-wrapper search-with-clear" style="flex-grow: 1;">
+                            <input type="text" id="nc_buscarProveedor" class="form-control" placeholder="Buscar proveedor por nombre o documento..." autocomplete="off">
+                            <i class='bx bx-x clear-autocomplete' id="btnLimpiarProveedor"></i>
+                            <div id="listaProveedores" class="autocomplete-list"></div>
+                            <input type="hidden" id="nc_idProveedor">
+                        </div>
+                        <button class="btn-create-prod" onclick="abrirModalCrearProveedor()" style="padding: 0 20px;">+ Nueva Persona</button>
+                    </div>
+                    <span class="error-message" id="error_nc_proveedor">Debe seleccionar un proveedor</span>
+                </div>
+
                 <div class="form-group"><label>Moneda *</label><select id="nc_moneda" class="form-control"></select><span class="error-message" id="error_nc_moneda">Requerido</span></div>
             </div>
             <hr class="divider">
@@ -132,6 +146,55 @@
         <div class="modal-header"><h3>Nuevo Producto</h3><span class="close-modal" onclick="cerrarModal('modalCrearProducto')">&times;</span></div>
         <div class="modal-body"><form id="formNuevoProducto"><div class="form-grid"><div class="form-group full-width"><label>Código *</label><input type="text" id="np_codigo" class="form-control" placeholder="Ej: PROD001"><span class="error-message" id="error_np_codigo">Requerido</span></div><div class="form-group full-width"><label>Nombre *</label><input type="text" id="np_nombre" class="form-control" placeholder="Nombre del producto"><span class="error-message" id="error_np_nombre">Requerido</span></div><div class="form-group full-width"><label>Descripción</label><textarea id="np_descripcion" class="form-control" rows="2" placeholder="Descripción breve"></textarea></div><div class="form-group"><label>Unidad de Medida *</label><select id="np_unidad" class="form-control"></select><span class="error-message" id="error_np_unidad">Requerido</span></div><div class="form-group"><label>Tipo de IGV *</label><select id="np_igv" class="form-control"></select><span class="error-message" id="error_np_igv">Requerido</span></div><div class="form-group full-width"><label>Categoría *</label><select id="np_categoria" class="form-control"></select><span class="error-message" id="error_np_categoria">Requerido</span></div><div class="form-group"><label>Precio de Compra</label><div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number" id="np_precioCompra" class="form-control" value="0"></div></div><div class="form-group"><label>Precio de Venta *</label><div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number" id="np_precioVenta" class="form-control" placeholder="0"></div><span class="error-message" id="error_np_precioVenta">Requerido</span></div></div></form></div>
         <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalCrearProducto')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevoProducto()">Guardar</button></div>
+    </div>
+</div>
+
+<div id="modalCrearProveedor" class="modal-overlay" style="z-index: 2200;">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3>Nuevo Proveedor</h3>
+            <span class="close-modal" onclick="cerrarModal('modalCrearProveedor')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formNuevoProveedor">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tipo Documento *</label>
+                        <select id="nprov_tipoDoc" class="form-control"></select>
+                        <span class="error-message" id="error_nprov_tipoDoc">Requerido</span>
+                    </div>
+                    <div class="form-group full-width" style="grid-column: span 2;">
+                        <label>N° Documento *</label>
+                        <input type="text" id="nprov_numeroDoc" class="form-control" placeholder="Ej: 12345678" maxlength="15">
+                        <span class="error-message" id="error_nprov_numeroDoc">Inválido</span>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Nombre Completo / Razón Social *</label>
+                        <input type="text" id="nprov_nombre" class="form-control" placeholder="Ingrese Nombre o Razón Social">
+                        <span class="error-message" id="error_nprov_nombre">Requerido</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="nprov_email" class="form-control" placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Teléfono</label>
+                        <input type="text" id="nprov_telefono" class="form-control" placeholder="999 999 999">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Dirección</label>
+                        <input type="text" id="nprov_direccion" class="form-control" placeholder="Dirección completa">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" onclick="cerrarModal('modalCrearProveedor')">Cancelar</button>
+            <button class="btn-save-modal" onclick="guardarNuevoProveedor()">Guardar</button>
+        </div>
     </div>
 </div>
 
