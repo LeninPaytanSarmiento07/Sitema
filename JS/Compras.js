@@ -205,10 +205,40 @@ function irAPagina(pagina) {
     } 
 }
 
+// ==========================================
+// NUEVA FUNCIÓN: LIMPIAR FORMULARIO COMPRA
+// ==========================================
+function limpiarFormularioCompra() {
+    // 1. Limpiar Inputs de Texto y Hidden
+    $('#nc_serie').val('');
+    $('#nc_numero').val('');
+    $('#nc_buscarProveedor').val('');
+    $('#nc_idProveedor').val('');
+    $('#nc_buscarProducto').val('');
+    
+    // 2. Resetear Fecha a Hoy
+    document.getElementById('nc_fecha').valueAsDate = new Date();
+
+    // 3. Ocultar botones de limpieza/listas
+    $('#btnLimpiarProveedor').hide();
+    $('#listaProveedores').hide();
+    $('#listaProductos').hide();
+
+    // 4. Vaciar Tabla de Productos
+    $('#nc_tablaProductos').empty();
+
+    // 5. Resetear Totales Visuales y Clases de Error
+    calcularTotalesGlobales(); // Esto pone todo a 0 porque la tabla está vacía
+    $('.form-control').removeClass('error');
+    $('.error-message').removeClass('show');
+}
+
 // 2. MODAL NUEVA COMPRA
 async function abrirModalNuevaCompra() {
     $('#modalNuevaCompra').css('display', 'flex');
-    document.getElementById('nc_fecha').valueAsDate = new Date();
+    
+    // Ejecutamos limpieza al abrir para asegurar estado inicial
+    limpiarFormularioCompra();
     
     const $btn = $('#modalNuevaCompra .btn-save-modal');
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Compra");
@@ -217,12 +247,6 @@ async function abrirModalNuevaCompra() {
     cargarDropdown(EP_VOUCHER, 'nc_tipoDoc');
     cargarDropdown(EP_CURRENCY, 'nc_moneda');
     await prepararOpcionesIGV();
-    
-    $('#nc_serie').val(''); $('#nc_numero').val(''); 
-    $('#nc_buscarProveedor').val(''); $('#nc_idProveedor').val(''); $('#btnLimpiarProveedor').hide();
-    $('#nc_tablaProductos').empty();
-    $('.form-control').removeClass('error'); $('.error-message').removeClass('show');
-    calcularTotalesGlobales();
 }
 
 async function cargarDropdown(url, elementId) {
@@ -238,7 +262,7 @@ async function prepararOpcionesIGV() {
 }
 
 // =========================================================
-//  LÓGICA BUSCADOR PROVEEDORES (Estilo Visual 2 líneas)
+//  LÓGICA BUSCADOR PROVEEDORES
 // =========================================================
 async function buscarPersona(texto) {
     const $list = $('#listaProveedores'); const term = texto || ""; 
@@ -250,7 +274,6 @@ async function buscarPersona(texto) {
                 const docNum = p.documentNumber || '';
                 let docLabel = p.documentType || (docNum.length === 11 ? "RUC" : "DNI");
                 
-                // Formato HTML igual que Ventas (Nombre arriba bold, Doc abajo)
                 const itemHtml = `
                 <div class="autocomplete-item">
                     <div class="item-info-clickable" style="width:100%" onclick="seleccionarProveedor('${p.id}', '${p.name}', '${docLabel}', '${docNum}')">
@@ -274,7 +297,7 @@ function seleccionarProveedor(id, nombre, tipoDoc, numDoc) {
 }
 
 // --------------------------------------------------------------------------------------
-// LOGICA DE BUSQUEDA DE PRODUCTOS (CON TOGGLE)
+// LOGICA DE BUSQUEDA DE PRODUCTOS
 // --------------------------------------------------------------------------------------
 async function buscarProducto(texto) {
     const $list = $('#listaProductos'); 
@@ -295,21 +318,17 @@ async function buscarProducto(texto) {
             items.forEach(prod => {
                 searchResults[prod.id] = prod;
                 
-                // Preparar datos visuales
                 const stock = parseFloat(prod.stock) || 0;
                 const unit = prod.unitOfMeasure || 'UNI';
                 let stockHtml = `Stock: ${stock.toFixed(2)} | ${unit}`;
                 let noStockBadge = '';
                 
                 if(stock <= 0) {
-                     // En Compras NO bloqueamos stock 0, solo mostramos badge informativo
                      noStockBadge = `<span style="background:#ef4444; color:white; font-size:10px; padding:2px 5px; border-radius:3px; margin-left:6px; font-weight:600;">Sin Stock</span>`;
                 }
 
-                // Verificar si ya está en la tabla para marcar el selector
                 const estaEnTabla = $('#nc_tablaProductos tr[data-id="' + prod.id + '"]').length > 0 ? ' added' : '';
 
-                // Generamos el HTML con el rectángulo selector
                 const itemHtml = `
                 <div class="autocomplete-item">
                     <div class="item-selector${estaEnTabla}" onclick="agregarProductoMultiple('${prod.id}', this)" title="Seleccionar/Quitar">
@@ -334,29 +353,23 @@ async function buscarProducto(texto) {
     } catch (e) { console.error(e); $list.hide(); }
 }
 
-// Nueva Función: TOGGLE (Seleccionar / Quitar)
 function agregarProductoMultiple(id, element) {
     const prod = searchResults[id];
-    
-    // Verificar si ya existe en la tabla
     const existingRow = $(`#nc_tablaProductos tr[data-id="${prod.id}"]`);
 
     if (existingRow.length > 0) {
-        // SI EXISTE: LO QUITAMOS (Desmarcar)
-        eliminarFila(existingRow.attr('id').replace('row_', '')); // Usamos la lógica de eliminar existente para recalcular
+        eliminarFila(existingRow.attr('id').replace('row_', ''));
         $(element).removeClass('added');
         toastr.info(`Removido: ${prod.name}`);
     } else {
-        // SI NO EXISTE: LO AGREGAMOS (Marcar)
         if (prod) {
-            agregarProductoATabla(prod, false); // false = no cerrar lista
+            agregarProductoATabla(prod, false);
             $(element).addClass('added');
             toastr.success(`Agregado: ${prod.name}`);
         }
     }
 }
 
-// Función Clásica: Agrega y cierra (al hacer click en el texto)
 function seleccionarProductoDeLista(id) {
     const prod = searchResults[id];
     if (prod) agregarProductoATabla(prod, true);
@@ -439,9 +452,6 @@ function calcularTotalesGlobales() {
 function eliminarFila(rowId) { 
     $(`#row_${rowId}`).remove(); 
     calcularTotalesGlobales(); 
-    
-    // Si estamos buscando, actualizamos visualmente el selector si el item sigue visible en la lista
-    // Esto es un extra visual por si el usuario elimina desde la tabla mientras busca
     const prodId = $(`#row_${rowId}`).data('id'); 
 }
 
@@ -623,7 +633,17 @@ async function guardarNuevoProveedor() {
     }
 }
 
-function cerrarModal(id){$(`#${id}`).fadeOut(200);}
+// ==========================================
+// FUNCIÓN CERRAR MODAL (MODIFICADA PARA LIMPIEZA)
+// ==========================================
+function cerrarModal(id){
+    $(`#${id}`).fadeOut(200);
+    
+    // LIMPIAR SI ES EL MODAL DE COMPRA
+    if (id === 'modalNuevaCompra') {
+        limpiarFormularioCompra();
+    }
+}
 
 async function abrirModalDetalle(purchaseId) {
     if(!purchaseId) return;

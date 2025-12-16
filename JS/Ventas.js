@@ -17,6 +17,11 @@ let pageSize = 10;
 let totalPages = 1;
 let searchTerm = "";
 let warehouseId = "";
+
+// VARIABLES NUEVAS PARA FECHAS
+let startDate = "";
+let endDate = "";
+
 let igvListCache = []; 
 let searchResults = {}; 
 let searchTimer = null; 
@@ -41,6 +46,42 @@ $(document).ready(function() {
 
     $('#warehouseSelect').on('change', function() { warehouseId = $(this).val(); currentPage = 1; fetchVentas(currentPage); });
 
+    // ==========================================
+    // LOGICA DE FILTROS DE FECHA (CON X)
+    // ==========================================
+    $('#startDate').on('change', function() {
+        startDate = $(this).val();
+        if(startDate) $('#clearStartDate').show();
+        else $('#clearStartDate').hide();
+        currentPage = 1;
+        fetchVentas(currentPage);
+    });
+
+    $('#endDate').on('change', function() {
+        endDate = $(this).val();
+        if(endDate) $('#clearEndDate').show();
+        else $('#clearEndDate').hide();
+        currentPage = 1;
+        fetchVentas(currentPage);
+    });
+
+    $('#clearStartDate').click(function() {
+        $('#startDate').val('');
+        startDate = "";
+        $(this).hide();
+        currentPage = 1;
+        fetchVentas(currentPage);
+    });
+
+    $('#clearEndDate').click(function() {
+        $('#endDate').val('');
+        endDate = "";
+        $(this).hide();
+        currentPage = 1;
+        fetchVentas(currentPage);
+    });
+
+    // Eventos Modal Nueva Venta
     $('#nv_buscarCliente').on('input focus', function() { buscarPersona($(this).val()); });
     $('#nv_buscarProducto').on('input focus', function() { buscarProducto($(this).val()); });
     
@@ -90,7 +131,11 @@ async function prepararOpcionesIGV() {
 async function fetchVentas(page) {
     const $tbody = $('#ventasBody'); $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">Cargando...</td></tr>');
     try {
-        const r = await fetch(`${EP_SALE}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}`); const d = await r.json();
+        // SE INCLUYEN startDate Y endDate EN LA URL
+        const url = `${EP_SALE}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
+        const r = await fetch(url); 
+        const d = await r.json();
+        
         $tbody.empty(); const l = d.items || [];
         if (l.length === 0) { $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">No se encontraron resultados.</td></tr>'); return; }
         
@@ -111,21 +156,52 @@ async function fetchVentas(page) {
 function cambiarPagina(d) { const p = currentPage + d; if (p >= 1 && p <= totalPages) fetchVentas(p); }
 function irAPagina(p) { if (p >= 1 && p <= totalPages) fetchVentas(p); }
 
+// ==========================================
+// FUNCIÓN: LIMPIAR FORMULARIO VENTA
+// ==========================================
+function limpiarFormularioVenta() {
+    // 1. Limpiar Inputs
+    $('#nv_buscarCliente').val('');
+    $('#nv_idCliente').val('');
+    $('#nv_buscarProducto').val('');
+
+    // 2. Ocultar elementos UI
+    $('#btnLimpiarCliente').hide();
+    $('#listaClientes').hide();
+    $('#listaProductos').hide();
+
+    // 3. Vaciar Tabla
+    $('#nv_tablaProductos').empty();
+
+    // 4. Resetear Totales Visuales
+    $('#nv_txtNoGravado').text('S/ 0.00');
+    $('#nv_txtSubTotal').text('S/ 0.00');
+    $('#nv_txtIGV').text('S/ 0.00');
+    $('#nv_txtTotal').text('S/ 0.00');
+
+    // 5. Limpiar Errores
+    $('.form-control').removeClass('error');
+    $('.error-message').removeClass('show');
+}
+
 async function abrirModalNuevaVenta() {
     $('#modalNuevaVenta').css('display', 'flex');
+
+    // EJECUTAMOS LIMPIEZA AL ABRIR
+    limpiarFormularioVenta();
+
     const $btn = $('#modalNuevaVenta .btn-save-modal');
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Venta");
-    cargarDropdown(EP_WAREHOUSE, 'nv_almacen'); cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); cargarDropdown(EP_CURRENCY, 'nv_moneda');
-    $('#nv_buscarCliente').val(''); $('#nv_idCliente').val(''); $('#btnLimpiarCliente').hide();
-    $('#nv_tablaProductos').empty();
-    $('.form-control').removeClass('error'); $('.error-message').removeClass('show');
-    calcularTotalesGlobales();
+    
+    cargarDropdown(EP_WAREHOUSE, 'nv_almacen'); 
+    cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); 
+    cargarDropdown(EP_CURRENCY, 'nv_moneda');
 }
 
 async function cargarDropdown(u,e){ try{const r=await fetch(u);const d=await r.json();const s=$(`#${e}`);s.empty();d.forEach(i=>{s.append(`<option value="${i.id}">${i.description||i.name||i.text||i.symbol||"Sin Nombre"}</option>`);});}catch(x){console.error(x);} }
 
 // =========================================================
-//  LÓGICA: BUSCADOR DE CLIENTES (Estilo Visual 2 líneas)
+//  LÓGICA: BUSCADOR DE CLIENTES
 // =========================================================
 async function buscarPersona(t){ 
     const l=$('#listaClientes');const q=t?t.trim():""; 
@@ -141,7 +217,6 @@ async function buscarPersona(t){
                 const dn=p.documentNumber||'';
                 let dl=p.documentType||(dn.length===11?"RUC":"DNI"); 
                 
-                // Formato HTML igual que Compras (Nombre arriba bold, Doc abajo)
                 const itemHtml = `
                 <div class="autocomplete-item">
                     <div class="item-info-clickable" style="width:100%" onclick="seleccionarCliente('${p.id}', '${dl}: ${dn} - ${p.name}')">
@@ -149,17 +224,13 @@ async function buscarPersona(t){
                         <div style="color: #666; font-size: 11px; margin-top: 2px;">${dl}: ${dn}</div>
                     </div>
                 </div>`;
-                
                 l.append(itemHtml);
             });
-        }else{
-            l.hide();
-        }
+        }else{ l.hide(); }
     }catch(e){l.hide();} 
 }
 
 function seleccionarCliente(id, txt){ 
-    // Formato seleccionado: TipoDoc: Numero - Nombre (Con botón X visible por CSS/JS)
     $('#nv_buscarCliente').val(txt); 
     $('#nv_idCliente').val(id); 
     $('#btnLimpiarCliente').show(); 
@@ -185,22 +256,19 @@ async function buscarProducto(t){
                 let stockHtml = `Stock: ${stock.toFixed(2)} | ${unit}`;
                 let noStockBadge = '';
                 
-                // Determinar estado, clase y si ya está seleccionado en la tabla
                 let itemClass = "autocomplete-item";
                 let clickActionInfo = `onclick="seleccionarProductoDeLista('${p.id}')"`;
                 let clickActionSelector = `onclick="agregarProductoMultiple('${p.id}', this)"`;
                 
-                // Verificar si ya está en la tabla para marcar el selector
                 const estaEnTabla = $('#nv_tablaProductos tr[data-id="' + p.id + '"]').length > 0 ? ' added' : '';
 
                 if (stock <= 0) {
-                    itemClass += " disabled-item"; // Clase CSS que bloquea e inhabilita visualmente
+                    itemClass += " disabled-item"; 
                     noStockBadge = `<span style="background:#ef4444; color:white; font-size:10px; padding:2px 5px; border-radius:3px; margin-left:6px; font-weight:600;">Sin Stock</span>`;
-                    clickActionInfo = "";     // Sin acción click
-                    clickActionSelector = ""; // Sin acción click
+                    clickActionInfo = "";     
+                    clickActionSelector = ""; 
                 }
                 
-                // Estructura HTML con la clase 'added' inyectada si corresponde
                 const itemHtml = `
                 <div class="${itemClass}">
                     <div class="item-selector${estaEnTabla}" ${clickActionSelector} title="Seleccionar/Quitar">
@@ -218,37 +286,30 @@ async function buscarProducto(t){
                         </div>
                     </div>
                 </div>`;
-                
                 l.append(itemHtml);
             });
         } else { l.hide(); }
     } catch(e) { console.error(e); l.hide(); } 
 }
 
-// Nueva Función: TOGGLE (Seleccionar / Quitar)
 function agregarProductoMultiple(id, element) {
     const p = searchResults[id];
-    
-    // Verificar si ya existe en la tabla
     const existingRow = $(`#nv_tablaProductos tr[data-id="${p.id}"]`);
 
     if (existingRow.length > 0) {
-        // SI EXISTE: LO QUITAMOS (Desmarcar)
         existingRow.remove();
         $(element).removeClass('added');
         toastr.info(`Removido: ${p.name}`);
         calcularTotalesGlobales();
     } else {
-        // SI NO EXISTE: LO AGREGAMOS (Marcar)
         if ((parseFloat(p.stock) || 0) > 0) {
-            agregarProductoATabla(p, false); // false = no cerrar lista
+            agregarProductoATabla(p, false); 
             $(element).addClass('added');
             toastr.success(`Agregado: ${p.name}`);
         }
     }
 }
 
-// Función Clásica: Agrega y cierra (click en el texto)
 function seleccionarProductoDeLista(id){ 
     const p = searchResults[id]; 
     if(p && (parseFloat(p.stock) || 0) > 0) agregarProductoATabla(p, true); 
@@ -259,11 +320,9 @@ function agregarProductoATabla(prod, cerrarLista = true) {
     
     if ($(`#nv_tablaProductos tr[data-id="${prod.id}"]`).length > 0) { 
         if(cerrarLista) toastr.error("Producto duplicado"); 
-        // Si no cerramos lista (modo toggle), no mostramos error aquí, ya se maneja en el toggle
         return; 
     }
     
-    // Validar Stock
     const stock = parseFloat(prod.stock) || 0;
     if (stock <= 0) { toastr.error("Stock insuficiente"); return; }
 
@@ -457,6 +516,17 @@ async function guardarNuevoCliente() {
 
 async function abrirModalCrearProducto() { $('#modalCrearProducto').css('display','flex'); cargarDropdown(EP_UNIT,'np_unidad');cargarDropdown(EP_IGV,'np_igv');cargarDropdown(EP_CATEGORY,'np_categoria'); $('#formNuevoProducto')[0].reset(); $('.form-control').removeClass('error'); $('.error-message').removeClass('show'); }
 async function guardarNuevoProducto() { let v=true; ['np_codigo','np_nombre','np_unidad','np_igv','np_categoria','np_precioVenta'].forEach(i=>{if(!$(`#${i}`).val()){$(`#${i}`).addClass('error');$(`#error_${i}`).addClass('show');v=false;}else{$(`#${i}`).removeClass('error');$(`#error_${i}`).removeClass('show');}}); if(!v){toastr.error("Faltan datos");return;} const p={code:$('#np_codigo').val(),name:$('#np_nombre').val(),description:$('#np_descripcion').val(),unitOfMeasureId:$('#np_unidad').val(),igvTypeId:$('#np_igv').val(),categoryId:$('#np_categoria').val(),purchasePrice:parseFloat($('#np_precioCompra').val())||0,salePrice:parseFloat($('#np_precioVenta').val())||0}; try{const r=await fetch(EP_PRODUCT_CRUD,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){toastr.success("Producto creado");cerrarModal('modalCrearProducto');}else{const e=await r.json();toastr.error(e.message||"Error al crear");}}catch{toastr.error("Error conexión");} }
-function cerrarModal(id){$(`#${id}`).fadeOut(200);}
+
+// ==========================================
+// FUNCIÓN CERRAR MODAL (ACTUALIZADA)
+// ==========================================
+function cerrarModal(id){
+    $(`#${id}`).fadeOut(200);
+    // Limpiar al cerrar si es el modal de nueva venta
+    if (id === 'modalNuevaVenta') {
+        limpiarFormularioVenta();
+    }
+}
+
 async function abrirModalDetalle(id) { if(!id) return; $('#modalDetalleVenta').css('display','flex'); $('#modalLoader').show(); $('#modalContentBody').hide(); try { const r = await fetch(`${EP_SALE}/${id}`); const d = await r.json(); $('#mv_tipoDoc').text(d.voucherType||'Venta'); $('#mv_serieNumero').text(d.voucherNumber||'-'); $('#mv_fechaEmision').text(formatearFechaPeru(d.issueDate,false)); $('#mv_cliente').text(d.personName||'-'); const dn=d.personDocumentNumber||''; let dt=d.personDocumentType||(dn.length===11?'RUC':'DNI'); $('#mv_docCliente').text(dn?`${dt}: ${dn}`:'-'); $('#mv_almacen').text(d.warehouse||'-'); $('#mv_moneda').text(d.currency||'-'); $('#mv_fechaRegistro').text(formatearFechaPeru(d.createdDate||d.issueDate,true)); const t=$('#modalTableBody'); t.empty(); if(d.details){ d.details.forEach(i=>{ t.append(`<tr><td><span style="background:#f4f4f4;padding:2px 6px;border-radius:4px;border:1px solid #ddd;font-weight:600">${i.productCode||'-'}</span></td><td><strong>${i.productName||'-'}</strong></td><td>${i.unitOfMeasure||'UNI'}</td><td>${i.igvType||'-'}</td><td class="text-right">${(i.quantity||0).toFixed(2)}</td><td class="text-right">S/ ${formatoMoneda(i.unitPrice)}</td><td class="text-right">S/ ${formatoMoneda(i.amount)}</td><td class="text-right">S/ ${formatoMoneda(i.taxAmount)}</td><td class="text-right"><strong>S/ ${formatoMoneda(i.lineTotal)}</strong></td></tr>`); }); } $('#mv_totalNoGravado').text(`S/ ${formatoMoneda(d.exempt)}`); $('#mv_totalSubtotal').text(`S/ ${formatoMoneda(d.subTotal)}`); $('#mv_totalIgv').text(`S/ ${formatoMoneda(d.taxAmount)}`); $('#mv_totalFinal').text(`S/ ${formatoMoneda(d.total)}`); $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200); } catch(e) { toastr.error("Error al cargar"); cerrarModal('modalDetalleVenta'); } }
 $(window).click(e=>{if($(e.target).hasClass('modal-overlay'))$(e.target).fadeOut(200);});
