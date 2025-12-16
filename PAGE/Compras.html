@@ -46,7 +46,27 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="Buscar por serie, número o proveedor..." autocomplete="off">
                 <span class="search-icon">🔍</span>
             </div>
-            <select id="warehouseSelect" class="warehouse-select"></select>
+            
+            <div class="filter-group">
+                <select id="warehouseSelect" class="warehouse-select"></select>
+            </div>
+
+            <div class="filter-group">
+                <label for="startDate">Fecha Inicio</label>
+                <div class="date-container">
+                    <input type="date" id="startDate" class="date-select">
+                    <span class="btn-clear-date" id="clearStartDate" title="Limpiar fecha">✖</span>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label for="endDate">Fecha Fin</label>
+                <div class="date-container">
+                    <input type="date" id="endDate" class="date-select">
+                    <span class="btn-clear-date" id="clearEndDate" title="Limpiar fecha">✖</span>
+                </div>
+            </div>
+
         </div>
     </div>
 

@@ -206,7 +206,8 @@ a {
 .filters-wrapper {
     display: flex;
     gap: 15px;
-    align-items: center;
+    align-items: flex-end; /* Alinea los filtros al fondo */
+    flex-wrap: wrap; /* Permite que bajen si no hay espacio */
 }
 
 .search-box {
@@ -235,6 +236,50 @@ a {
     transform: translateY(-50%);
     color: #999;
 }
+
+/* FILTROS DE FECHA (ESTILOS NUEVOS) */
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+    margin-left: 2px;
+}
+
+.date-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.date-select {
+    padding: 9px 15px;
+    border: 2px solid #eee;
+    border-radius: 6px;
+    background-color: white;
+    outline: none;
+    cursor: pointer;
+    color: #555;
+    transition: border-color 0.3s;
+    font-family: inherit;
+}
+.date-select:focus { border-color: #3d4f5d; }
+
+.btn-clear-date {
+    display: none; /* Oculto por defecto */
+    color: #ef4444; 
+    font-weight: 800;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    user-select: none;
+}
+.btn-clear-date:hover { transform: scale(1.2); }
 
 .warehouse-select {
     padding: 10px 15px;
@@ -311,7 +356,7 @@ a {
 }
 
 /* =========================================
-   5. PAGINACIÓN (DISEÑO ACTUALIZADO)
+   5. PAGINACIÓN
    ========================================= */
 .pagination-container {
     display: flex;
@@ -396,7 +441,6 @@ a {
     border-color: #e9ecef;
 }
 
-/* Caja número página */
 .page-number-box {
     background-color: #343a40;
     color: white;
@@ -412,7 +456,7 @@ a {
 }
 
 /* =========================================
-   6. MODALES (ESTRUCTURA)
+   6. MODALES
    ========================================= */
 .modal-overlay {
     position: fixed;
@@ -430,7 +474,7 @@ a {
 .modal-content {
     background: white;
     width: 95%;
-    max-width: 1200px; /* Ancho Amplio */
+    max-width: 1200px;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -514,7 +558,7 @@ a {
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* =========================================
-   7. FORMULARIO NUEVA COMPRA & VALIDACIONES
+   7. FORMULARIOS Y VALIDACIONES
    ========================================= */
 .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
 .full-width { grid-column: span 3; }
@@ -534,20 +578,19 @@ a {
 
 .divider { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
 
-/* AUTOCOMPLETE & BUSCADOR CON X */
+/* AUTOCOMPLETE */
 .autocomplete-wrapper { position: relative; width: 100%; }
 .search-with-clear { position: relative; display: flex; align-items: center; }
 
 #nc_buscarProveedor { width: 100%; padding-right: 35px; text-overflow: ellipsis; }
 
-/* Botón X para borrar */
 .clear-autocomplete {
     position: absolute;
     right: 10px;
     font-size: 20px;
     color: #999;
     cursor: pointer;
-    display: none; /* JS lo muestra */
+    display: none;
     transition: color 0.2s;
 }
 .clear-autocomplete:hover { color: #dc3545; }
@@ -555,10 +598,11 @@ a {
 .autocomplete-list {
     position: absolute; top: 100%; left: 0; right: 0;
     background: white; border: 1px solid #ddd; border-top: none;
-    max-height: 200px; overflow-y: auto; z-index: 1000;
+    max-height: 250px; overflow-y: auto; z-index: 1000;
     border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     display: none;
 }
+/* Estilo base (se sobrescribe abajo para productos) */
 .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
 .autocomplete-item:hover { background-color: #f4f6f8; }
 
@@ -582,12 +626,10 @@ a {
 .btn-delete-row { background: white; border: 1px solid #e57373; color: #d32f2f; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .btn-delete-row:hover { background: #ffebee; }
 
-/* ESTILOS DE ERROR (VALIDACIÓN) */
 .form-control.error { border-color: #dc3545; background-color: #fff8f8; }
 .error-message { color: #dc3545; font-size: 11px; margin-top: 4px; display: none; font-weight: 500; }
 .error-message.show { display: block; }
 
-/* ERRORES FLOTANTES TABLA */
 .input-container { position: relative; display: flex; flex-direction: column; width: 100%; }
 .row-error-msg {
     color: #dc3545; font-size: 10px; font-weight: 700;
@@ -597,14 +639,13 @@ a {
 }
 .input-table.error { border: 1px solid #dc3545 !important; background-color: #fff8f8; box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2); }
 
-/* INPUT PREFIX (S/) */
 .input-with-prefix { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 4px; background: white; }
 .input-with-prefix .input-prefix { padding: 10px 12px; background-color: #f5f5f5; border-right: 1px solid #ddd; color: #666; font-size: 13px; font-weight: 600; }
 .input-with-prefix input { border: none; flex: 1; padding: 10px; outline: none; }
 .input-with-prefix.error { border-color: #dc3545; }
 
 /* =========================================
-   8. DETALLES DE COMPRA (VISUALIZACIÓN)
+   8. DETALLES Y TOTALES
    ========================================= */
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 20px; }
 .info-item label { display: block; font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 8px; }
@@ -621,14 +662,72 @@ a {
 .modal-table td { padding: 14px 12px; border-bottom: 1px solid #eee; color: #333; font-size: 14px; }
 .text-right { text-align: right !important; }
 
-/* Totales */
 .totals-section { display: flex; justify-content: flex-end; margin-top: 30px; }
 .totals-box { width: 350px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
 .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px; color: #555; }
 .total-row.main-total { margin-top: 15px; padding-top: 15px; border-top: 2px solid #ddd; font-weight: 800; color: #000; font-size: 20px; }
 
-/* =========================================
-   9. NOTIFICACIONES (TOASTR)
-   ========================================= */
 #toast-container { z-index: 99999 !important; }
 .toast-bottom-right { bottom: 20px; right: 20px; }
+
+/* =========================================
+   9. ESTILOS NUEVOS BUSCADOR (PRODUCTOS Y PROVEEDORES)
+   ========================================= */
+.autocomplete-item {
+    display: flex !important; /* Layout Flexible */
+    align-items: center;
+    padding: 0 !important; /* Reset padding para manejar internos */
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    min-height: 50px;
+}
+.autocomplete-item:hover {
+    background-color: #f9f9f9;
+}
+
+/* Rectángulo Selector (Checkbox) */
+.item-selector {
+    width: 45px;
+    align-self: stretch; /* Ocupa todo el alto */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-right: 1px solid #f0f0f0;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.item-selector:hover {
+    background-color: #eee;
+}
+.selector-square {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #444;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+}
+/* Efecto visual al agregar */
+.item-selector.added .selector-square {
+    background-color: #333;
+    border-color: #333;
+}
+.item-selector.added .selector-square::after {
+    content: '✔';
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Área de información del producto / proveedor */
+.item-info-clickable {
+    flex-grow: 1;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}

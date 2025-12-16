@@ -10,7 +10,6 @@ const EP_PRODUCT_CRUD = `${API_BASE}/Product`;
 const EP_UNIT = `${API_BASE}/UnitOfMeasure`;
 const EP_IGV = `${API_BASE}/IGVType`;
 const EP_CATEGORY = `${API_BASE}/Category`;
-// NUEVO: Endpoint para tipos de documento (Crear Cliente)
 const EP_DOC_TYPES = `${API_BASE}/DocumentType/select`;
 
 let currentPage = 1;
@@ -62,9 +61,8 @@ $(document).ready(function() {
 
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
 
-    // NUEVO: Validación dinámica para Crear Cliente
     $('#ncli_numeroDoc').on('input', function(e) {
-        e.target.value = e.target.value.replace(/\D/g, ''); // Solo números
+        e.target.value = e.target.value.replace(/\D/g, ''); 
         validarReglasDocumento();
     });
     
@@ -126,9 +124,53 @@ async function abrirModalNuevaVenta() {
 
 async function cargarDropdown(u,e){ try{const r=await fetch(u);const d=await r.json();const s=$(`#${e}`);s.empty();d.forEach(i=>{s.append(`<option value="${i.id}">${i.description||i.name||i.text||i.symbol||"Sin Nombre"}</option>`);});}catch(x){console.error(x);} }
 
-async function buscarPersona(t){ const l=$('#listaClientes');const q=t?t.trim():""; if(q.length<1){l.hide();return;} try{const r=await fetch(`${API_BASE}/Person/search?searchTerm=${q}`);const d=await r.json();const i=d.items||d; l.empty(); if(i.length>0){l.show();i.forEach(p=>{const dn=p.documentNumber||'';let dl=p.documentType||(dn.length===11?"RUC":"DNI"); const dt=`${dl}: ${dn} - ${p.name}`; l.append(`<div class="autocomplete-item" onclick="seleccionarCliente('${p.id}','${dt}')"><strong style="font-size:13px;color:#333;">${dt}</strong></div>`);});}else{l.hide();}}catch(e){l.hide();} }
-function seleccionarCliente(id, txt){ $('#nv_buscarCliente').val(txt); $('#nv_idCliente').val(id); $('#btnLimpiarCliente').show(); $('#listaClientes').hide(); $('#nv_buscarCliente').removeClass('error'); $('#error_nv_cliente').removeClass('show'); }
+// =========================================================
+//  LÓGICA: BUSCADOR DE CLIENTES (Estilo Visual 2 líneas)
+// =========================================================
+async function buscarPersona(t){ 
+    const l=$('#listaClientes');const q=t?t.trim():""; 
+    if(q.length<1){l.hide();return;} 
+    try{
+        const r=await fetch(`${API_BASE}/Person/search?searchTerm=${q}`);
+        const d=await r.json();
+        const i=d.items||d; 
+        l.empty(); 
+        if(i.length>0){
+            l.show();
+            i.forEach(p=>{
+                const dn=p.documentNumber||'';
+                let dl=p.documentType||(dn.length===11?"RUC":"DNI"); 
+                
+                // Formato HTML igual que Compras (Nombre arriba bold, Doc abajo)
+                const itemHtml = `
+                <div class="autocomplete-item">
+                    <div class="item-info-clickable" style="width:100%" onclick="seleccionarCliente('${p.id}', '${dl}: ${dn} - ${p.name}')">
+                        <div style="font-weight: 600; color: #333; font-size: 13px;">${p.name}</div>
+                        <div style="color: #666; font-size: 11px; margin-top: 2px;">${dl}: ${dn}</div>
+                    </div>
+                </div>`;
+                
+                l.append(itemHtml);
+            });
+        }else{
+            l.hide();
+        }
+    }catch(e){l.hide();} 
+}
 
+function seleccionarCliente(id, txt){ 
+    // Formato seleccionado: TipoDoc: Numero - Nombre (Con botón X visible por CSS/JS)
+    $('#nv_buscarCliente').val(txt); 
+    $('#nv_idCliente').val(id); 
+    $('#btnLimpiarCliente').show(); 
+    $('#listaClientes').hide(); 
+    $('#nv_buscarCliente').removeClass('error'); 
+    $('#error_nv_cliente').removeClass('show'); 
+}
+
+// --------------------------------------------------------------------------------------
+// LOGICA DE BUSQUEDA DE PRODUCTOS MODIFICADA (Toggle / Selección y Quitado)
+// --------------------------------------------------------------------------------------
 async function buscarProducto(t){ 
     const l=$('#listaProductos'); const a=$('#nv_almacen').val();
     if(!a){ l.hide(); return; } const q=t?t.trim():""; if(q.length<1){ l.hide(); return; } 
@@ -139,24 +181,87 @@ async function buscarProducto(t){
             i.forEach(p => {
                 searchResults[p.id]=p;
                 const stock = parseFloat(p.stock) || 0;
-                let stockHtml = stock > 0 ? `<span style="font-weight:700;">stock: ${stock}</span>` : `<span style="color:#dc3545; font-weight:700;">No disponible Stock: 0</span>`;
-                let itemClass = stock > 0 ? "autocomplete-item" : "autocomplete-item disabled-item";
-                let clickAction = stock > 0 ? `onclick="seleccionarProductoDeLista('${p.id}')"` : "";
+                const unit = p.unitOfMeasure || 'UNI';
+                let stockHtml = `Stock: ${stock.toFixed(2)} | ${unit}`;
+                let noStockBadge = '';
                 
-                l.append(`<div class="${itemClass}" ${clickAction}><div><strong>${p.name}</strong><small style="color:#666; margin-left:5px;">Cod: ${p.code}</small></div><div>${stockHtml}</div></div>`);
+                // Determinar estado, clase y si ya está seleccionado en la tabla
+                let itemClass = "autocomplete-item";
+                let clickActionInfo = `onclick="seleccionarProductoDeLista('${p.id}')"`;
+                let clickActionSelector = `onclick="agregarProductoMultiple('${p.id}', this)"`;
+                
+                // Verificar si ya está en la tabla para marcar el selector
+                const estaEnTabla = $('#nv_tablaProductos tr[data-id="' + p.id + '"]').length > 0 ? ' added' : '';
+
+                if (stock <= 0) {
+                    itemClass += " disabled-item"; // Clase CSS que bloquea e inhabilita visualmente
+                    noStockBadge = `<span style="background:#ef4444; color:white; font-size:10px; padding:2px 5px; border-radius:3px; margin-left:6px; font-weight:600;">Sin Stock</span>`;
+                    clickActionInfo = "";     // Sin acción click
+                    clickActionSelector = ""; // Sin acción click
+                }
+                
+                // Estructura HTML con la clase 'added' inyectada si corresponde
+                const itemHtml = `
+                <div class="${itemClass}">
+                    <div class="item-selector${estaEnTabla}" ${clickActionSelector} title="Seleccionar/Quitar">
+                        <div class="selector-square"></div>
+                    </div>
+                    
+                    <div class="item-info-clickable" ${clickActionInfo}>
+                        <div style="display: flex; align-items: center;">
+                            <span style="background:#f0f0f0; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; border:1px solid #ddd; color:#555;">${p.code || 'S/C'}</span>
+                            <span style="font-weight: 600; font-size: 13px; color:#333; margin-left:8px;">${p.name}</span>
+                            ${noStockBadge}
+                        </div>
+                        <div style="font-size: 11px; color: #777; margin-top: 3px;">
+                            ${stockHtml}
+                        </div>
+                    </div>
+                </div>`;
+                
+                l.append(itemHtml);
             });
         } else { l.hide(); }
     } catch(e) { console.error(e); l.hide(); } 
 }
-function seleccionarProductoDeLista(id){ 
-    const p = searchResults[id]; 
-    if(p && (parseFloat(p.stock) || 0) > 0) agregarProductoATabla(p); 
-    else toastr.warning("Producto sin stock.");
+
+// Nueva Función: TOGGLE (Seleccionar / Quitar)
+function agregarProductoMultiple(id, element) {
+    const p = searchResults[id];
+    
+    // Verificar si ya existe en la tabla
+    const existingRow = $(`#nv_tablaProductos tr[data-id="${p.id}"]`);
+
+    if (existingRow.length > 0) {
+        // SI EXISTE: LO QUITAMOS (Desmarcar)
+        existingRow.remove();
+        $(element).removeClass('added');
+        toastr.info(`Removido: ${p.name}`);
+        calcularTotalesGlobales();
+    } else {
+        // SI NO EXISTE: LO AGREGAMOS (Marcar)
+        if ((parseFloat(p.stock) || 0) > 0) {
+            agregarProductoATabla(p, false); // false = no cerrar lista
+            $(element).addClass('added');
+            toastr.success(`Agregado: ${p.name}`);
+        }
+    }
 }
 
-function agregarProductoATabla(prod) {
-    $('#listaProductos').hide(); $('#nv_buscarProducto').val(''); 
-    if ($(`#nv_tablaProductos tr[data-id="${prod.id}"]`).length > 0) { toastr.error("Producto duplicado"); return; }
+// Función Clásica: Agrega y cierra (click en el texto)
+function seleccionarProductoDeLista(id){ 
+    const p = searchResults[id]; 
+    if(p && (parseFloat(p.stock) || 0) > 0) agregarProductoATabla(p, true); 
+}
+
+function agregarProductoATabla(prod, cerrarLista = true) {
+    if(cerrarLista) { $('#listaProductos').hide(); $('#nv_buscarProducto').val(''); }
+    
+    if ($(`#nv_tablaProductos tr[data-id="${prod.id}"]`).length > 0) { 
+        if(cerrarLista) toastr.error("Producto duplicado"); 
+        // Si no cerramos lista (modo toggle), no mostramos error aquí, ya se maneja en el toggle
+        return; 
+    }
     
     // Validar Stock
     const stock = parseFloat(prod.stock) || 0;
@@ -164,7 +269,6 @@ function agregarProductoATabla(prod) {
 
     const rowId = Date.now();
     
-    // Nueva Columna STOCK
     const row = `<tr id="row_${rowId}" data-id="${prod.id}">
         <td><div style="font-weight:700;color:#333;">${prod.code||''}</div><small style="color:#666;font-size:12px;">${prod.name}</small></td>
         <td>${prod.unitOfMeasure||'UNI'}</td>
@@ -245,7 +349,6 @@ function guardarVenta() {
     }).catch(e=>{ toastr.error("Error conexión"); btn.prop('disabled',false).html(txt); });
 }
 
-// 4. NUEVO MODAL CREAR CLIENTE (Lógica clonada de Personas)
 async function abrirModalCrearCliente() {
     $('#modalCrearCliente').css('display', 'flex');
     $('#formNuevoCliente')[0].reset();
@@ -332,14 +435,10 @@ async function guardarNuevoCliente() {
         if(r.ok) {
             toastr.success("Cliente registrado exitosamente");
             cerrarModal('modalCrearCliente');
-            
-            // AUTO-SELECCIONAR EL CLIENTE CREADO
             const docLabel = $("#ncli_tipoDoc option:selected").text();
-            // Si la API devuelve el ID en d.id, lo usamos.
             if(d.id) {
                 seleccionarCliente(d.id, `${docLabel}: ${payload.documentNumber} - ${payload.name}`);
             } else {
-                // Si no, forzamos búsqueda rápida
                 buscarPersona(payload.documentNumber);
             }
 

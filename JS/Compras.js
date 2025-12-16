@@ -10,7 +10,6 @@ const EP_PRODUCT = `${API_BASE}/Product`;
 const EP_UNIT = `${API_BASE}/UnitOfMeasure`;
 const EP_IGV = `${API_BASE}/IGVType`;
 const EP_CATEGORY = `${API_BASE}/Category`;
-// NUEVO ENDPOINT PARA TIPOS DE DOCUMENTO (Para crear proveedor)
 const EP_DOC_TYPES = `${API_BASE}/DocumentType/select`;
 
 let currentPage = 1;
@@ -18,12 +17,16 @@ let pageSize = 10;
 let totalPages = 1;
 let searchTerm = "";
 let warehouseId = "";
+// Nuevas variables para fechas
+let startDate = "";
+let endDate = "";
+
 let cachedIgvOptions = ""; 
 let igvListCache = []; 
 let searchResults = {}; 
 let searchTimer = null; 
 
-// CONFIGURACIÓN TOASTR (ABAJO DERECHA)
+// CONFIGURACIÓN TOASTR
 toastr.options = {
     "closeButton": true, "debug": false, "newestOnTop": false, "progressBar": true,
     "positionClass": "toast-bottom-right", "preventDuplicates": false, "timeOut": "5000"
@@ -32,7 +35,6 @@ toastr.options = {
 $(document).ready(function() {
     loadWarehouses();
 
-    // PAGINACIÓN CORREGIDA
     $('#btnPrev').click(() => cambiarPagina(-1));
     $('#btnNext').click(() => cambiarPagina(1));
     $('#btnFirst').click(() => irAPagina(1));
@@ -44,7 +46,6 @@ $(document).ready(function() {
         fetchCompras(currentPage); 
     });
     
-    // BUSCADOR CON DEBOUNCE (300ms) - Desde 1 letra o vacío
     $('#searchInput').on('input', function() {
         const val = $(this).val().trim();
         clearTimeout(searchTimer);
@@ -57,14 +58,12 @@ $(document).ready(function() {
     $('#nc_buscarProveedor').on('input focus', function() { buscarPersona($(this).val()); });
     $('#nc_buscarProducto').on('input focus', function() { buscarProducto($(this).val()); });
     
-    // LIMPIAR PROVEEDOR
     $('#btnLimpiarProveedor').click(function() {
         $('#nc_buscarProveedor').val('').focus();
         $('#nc_idProveedor').val('');
         $(this).hide();
     });
 
-    // LIMPIAR ERRORES AL ESCRIBIR
     $('.form-control').on('input change', function() { $(this).removeClass('error'); $(this).siblings('.error-message').removeClass('show'); });
     $(document).on('input', '.input-table', function() { 
         const val = parseFloat($(this).val());
@@ -73,9 +72,8 @@ $(document).ready(function() {
 
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
 
-    // VALIDACIÓN DINÁMICA DE DOCUMENTO EN MODAL PROVEEDOR (Lógica de Personas.js)
     $('#nprov_numeroDoc').on('input', function(e) {
-        e.target.value = e.target.value.replace(/\D/g, ''); // Solo números
+        e.target.value = e.target.value.replace(/\D/g, ''); 
         validarReglasDocumento();
     });
     
@@ -84,9 +82,44 @@ $(document).ready(function() {
         $('#nprov_numeroDoc').removeClass('error');
         $('#error_nprov_numeroDoc').removeClass('show');
     });
+
+    // ==========================================
+    // LOGICA DE FILTROS DE FECHA (CON X)
+    // ==========================================
+    
+    $('#startDate').on('change', function() {
+        startDate = $(this).val();
+        if(startDate) $('#clearStartDate').show();
+        else $('#clearStartDate').hide();
+        currentPage = 1;
+        fetchCompras(currentPage);
+    });
+
+    $('#endDate').on('change', function() {
+        endDate = $(this).val();
+        if(endDate) $('#clearEndDate').show();
+        else $('#clearEndDate').hide();
+        currentPage = 1;
+        fetchCompras(currentPage);
+    });
+
+    $('#clearStartDate').click(function() {
+        $('#startDate').val('');
+        startDate = "";
+        $(this).hide();
+        currentPage = 1;
+        fetchCompras(currentPage);
+    });
+
+    $('#clearEndDate').click(function() {
+        $('#endDate').val('');
+        endDate = "";
+        $(this).hide();
+        currentPage = 1;
+        fetchCompras(currentPage);
+    });
 });
 
-// FUNCIONES AUXILIARES DE FORMATO
 function formatoMoneda(valor) {
     if (valor === undefined || valor === null) return "0.00";
     return parseFloat(valor).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -116,7 +149,8 @@ async function loadWarehouses() {
 async function fetchCompras(page) {
     const $tbody = $('#comprasBody'); $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">Cargando...</td></tr>');
     try {
-        const url = `${EP_PURCHASE}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}`;
+        // Incluimos startDate y endDate en la URL
+        const url = `${EP_PURCHASE}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
         const response = await fetch(url); const data = await response.json();
         $tbody.empty(); const items = data.items || [];
         if (items.length === 0) { $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">No se encontraron resultados.</td></tr>'); return; }
@@ -141,7 +175,6 @@ async function fetchCompras(page) {
             $tbody.append(row);
         });
 
-        // ACTUALIZAR PAGINACIÓN
         currentPage = data.pageNumber; 
         totalPages = data.totalPages;
         const totalCount = data.totalCount;
@@ -177,7 +210,6 @@ async function abrirModalNuevaCompra() {
     $('#modalNuevaCompra').css('display', 'flex');
     document.getElementById('nc_fecha').valueAsDate = new Date();
     
-    // Resetear Botón
     const $btn = $('#modalNuevaCompra .btn-save-modal');
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Compra");
 
@@ -205,6 +237,9 @@ async function prepararOpcionesIGV() {
     } catch (error) { console.error(error); }
 }
 
+// =========================================================
+//  LÓGICA BUSCADOR PROVEEDORES (Estilo Visual 2 líneas)
+// =========================================================
 async function buscarPersona(texto) {
     const $list = $('#listaProveedores'); const term = texto || ""; 
     try { const res = await fetch(`${EP_PERSON}?searchTerm=${term}`); const data = await res.json(); const items = data.items || data;
@@ -214,8 +249,16 @@ async function buscarPersona(texto) {
             items.forEach(p => {
                 const docNum = p.documentNumber || '';
                 let docLabel = p.documentType || (docNum.length === 11 ? "RUC" : "DNI");
-                const displayText = `${docLabel}: ${docNum} - ${p.name}`;
-                const itemHtml = `<div class="autocomplete-item" onclick="seleccionarProveedor('${p.id}', '${p.name}', '${docLabel}', '${docNum}')"><strong style="font-size:13px;color:#333;">${displayText}</strong></div>`;
+                
+                // Formato HTML igual que Ventas (Nombre arriba bold, Doc abajo)
+                const itemHtml = `
+                <div class="autocomplete-item">
+                    <div class="item-info-clickable" style="width:100%" onclick="seleccionarProveedor('${p.id}', '${p.name}', '${docLabel}', '${docNum}')">
+                        <div style="font-weight: 600; color: #333; font-size: 13px;">${p.name}</div>
+                        <div style="color: #666; font-size: 11px; margin-top: 2px;">${docLabel}: ${docNum}</div>
+                    </div>
+                </div>`;
+                
                 $list.append(itemHtml);
             });
         } else { $list.hide(); }
@@ -230,6 +273,9 @@ function seleccionarProveedor(id, nombre, tipoDoc, numDoc) {
     $('#nc_buscarProveedor').removeClass('error'); $('#error_nc_proveedor').removeClass('show');
 }
 
+// --------------------------------------------------------------------------------------
+// LOGICA DE BUSQUEDA DE PRODUCTOS (CON TOGGLE)
+// --------------------------------------------------------------------------------------
 async function buscarProducto(texto) {
     const $list = $('#listaProductos'); 
     const almacenId = $('#nc_almacen').val();
@@ -248,21 +294,81 @@ async function buscarProducto(texto) {
             $list.show();
             items.forEach(prod => {
                 searchResults[prod.id] = prod;
-                const itemHtml = `<div class="autocomplete-item" onclick="seleccionarProductoDeLista('${prod.id}')"><strong>${prod.name}</strong><span>Cod: ${prod.code}</span></div>`;
+                
+                // Preparar datos visuales
+                const stock = parseFloat(prod.stock) || 0;
+                const unit = prod.unitOfMeasure || 'UNI';
+                let stockHtml = `Stock: ${stock.toFixed(2)} | ${unit}`;
+                let noStockBadge = '';
+                
+                if(stock <= 0) {
+                     // En Compras NO bloqueamos stock 0, solo mostramos badge informativo
+                     noStockBadge = `<span style="background:#ef4444; color:white; font-size:10px; padding:2px 5px; border-radius:3px; margin-left:6px; font-weight:600;">Sin Stock</span>`;
+                }
+
+                // Verificar si ya está en la tabla para marcar el selector
+                const estaEnTabla = $('#nc_tablaProductos tr[data-id="' + prod.id + '"]').length > 0 ? ' added' : '';
+
+                // Generamos el HTML con el rectángulo selector
+                const itemHtml = `
+                <div class="autocomplete-item">
+                    <div class="item-selector${estaEnTabla}" onclick="agregarProductoMultiple('${prod.id}', this)" title="Seleccionar/Quitar">
+                        <div class="selector-square"></div>
+                    </div>
+                    
+                    <div class="item-info-clickable" onclick="seleccionarProductoDeLista('${prod.id}')">
+                        <div style="display: flex; align-items: center;">
+                            <span style="background:#f0f0f0; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; border:1px solid #ddd; color:#555;">${prod.code || 'S/C'}</span>
+                            <span style="font-weight: 600; font-size: 13px; color:#333; margin-left:8px;">${prod.name}</span>
+                            ${noStockBadge}
+                        </div>
+                        <div style="font-size: 11px; color: #777; margin-top: 3px;">
+                            ${stockHtml}
+                        </div>
+                    </div>
+                </div>`;
+                
                 $list.append(itemHtml);
             });
         } else { $list.hide(); }
     } catch (e) { console.error(e); $list.hide(); }
 }
 
-function seleccionarProductoDeLista(id) {
+// Nueva Función: TOGGLE (Seleccionar / Quitar)
+function agregarProductoMultiple(id, element) {
     const prod = searchResults[id];
-    if (prod) agregarProductoATabla(prod);
+    
+    // Verificar si ya existe en la tabla
+    const existingRow = $(`#nc_tablaProductos tr[data-id="${prod.id}"]`);
+
+    if (existingRow.length > 0) {
+        // SI EXISTE: LO QUITAMOS (Desmarcar)
+        eliminarFila(existingRow.attr('id').replace('row_', '')); // Usamos la lógica de eliminar existente para recalcular
+        $(element).removeClass('added');
+        toastr.info(`Removido: ${prod.name}`);
+    } else {
+        // SI NO EXISTE: LO AGREGAMOS (Marcar)
+        if (prod) {
+            agregarProductoATabla(prod, false); // false = no cerrar lista
+            $(element).addClass('added');
+            toastr.success(`Agregado: ${prod.name}`);
+        }
+    }
 }
 
-function agregarProductoATabla(prod) {
-    $('#listaProductos').hide(); $('#nc_buscarProducto').val(''); 
-    if ($(`#nc_tablaProductos tr[data-id="${prod.id}"]`).length > 0) { toastr.error("El producto ya está agregado", "Duplicado"); return; }
+// Función Clásica: Agrega y cierra (al hacer click en el texto)
+function seleccionarProductoDeLista(id) {
+    const prod = searchResults[id];
+    if (prod) agregarProductoATabla(prod, true);
+}
+
+function agregarProductoATabla(prod, cerrarLista = true) {
+    if(cerrarLista) { $('#listaProductos').hide(); $('#nc_buscarProducto').val(''); }
+    
+    if ($(`#nc_tablaProductos tr[data-id="${prod.id}"]`).length > 0) { 
+        if(cerrarLista) toastr.error("El producto ya está agregado", "Duplicado"); 
+        return; 
+    }
 
     const unidad = prod.unitOfMeasure || 'UNI'; 
     const codigo = prod.code || ''; 
@@ -330,7 +436,14 @@ function calcularTotalesGlobales() {
     $('#nc_txtTotal').text(`S/ ${formatoMoneda(globalTotal)}`);
 }
 
-function eliminarFila(rowId) { $(`#row_${rowId}`).remove(); calcularTotalesGlobales(); }
+function eliminarFila(rowId) { 
+    $(`#row_${rowId}`).remove(); 
+    calcularTotalesGlobales(); 
+    
+    // Si estamos buscando, actualizamos visualmente el selector si el item sigue visible en la lista
+    // Esto es un extra visual por si el usuario elimina desde la tabla mientras busca
+    const prodId = $(`#row_${rowId}`).data('id'); 
+}
 
 function guardarCompra() {
     let isValid = true;
@@ -363,7 +476,6 @@ function guardarCompra() {
 
     if (productError) { toastr.error("Revise las casillas rojas."); return; }
 
-    // BLOQUEAR BOTÓN
     const $btn = $('#modalNuevaCompra .btn-save-modal');
     const originalText = $btn.html();
     $btn.prop('disabled', true).html("<i class='bx bx-loader-alt bx-spin'></i> Guardando...");
@@ -405,14 +517,13 @@ async function guardarNuevoProducto() {
     try{const r=await fetch(EP_PRODUCT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){toastr.success("Producto creado.");cerrarModal('modalCrearProducto');}else{const e=await r.json();toastr.error(e.message||"Error al crear.");}}catch{toastr.error("Error conexión.");}
 }
 
-// 5. NUEVO SUB-MODAL PROVEEDOR (Lógica extraída de Personas)
+// 5. NUEVO SUB-MODAL PROVEEDOR
 async function abrirModalCrearProveedor() {
     $('#modalCrearProveedor').css('display', 'flex');
     $('#formNuevoProveedor')[0].reset();
     $('.form-control').removeClass('error');
     $('.error-message').removeClass('show');
     
-    // Cargar tipos de documento para el modal
     try {
         const res = await fetch(EP_DOC_TYPES);
         const data = await res.json();
@@ -421,7 +532,6 @@ async function abrirModalCrearProveedor() {
         
         data.forEach(item => {
             const txt = item.description || item.name || item.text;
-            // Guardar info para validar
             const safeTxt = (txt || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
             $sel.append(`<option value="${item.id}" data-name="${safeTxt}">${txt}</option>`);
         });
@@ -460,7 +570,6 @@ function validarReglasDocumento() {
 }
 
 async function guardarNuevoProveedor() {
-    // Validar campos básicos
     let isValid = true;
     ['nprov_tipoDoc', 'nprov_numeroDoc', 'nprov_nombre'].forEach(id => {
         if(!$(`#${id}`).val()) { $(`#${id}`).addClass('error'); $(`#error_${id}`).addClass('show'); isValid = false; }
@@ -495,24 +604,12 @@ async function guardarNuevoProveedor() {
         if(r.ok) {
             toastr.success("Proveedor registrado exitosamente");
             cerrarModal('modalCrearProveedor');
-            
-            // AUTO-SELECCIONAR el proveedor recién creado en la compra
             const docLabel = $("#nprov_tipoDoc option:selected").text();
-            // Suponemos que la API retorna el ID del objeto creado, si no, habría que buscarlo. 
-            // Si 'd' es el ID string o un objeto con ID:
-            const newId = d.id || (typeof d === 'string' ? d : null); 
-            
-            // Si la API no devuelve ID directo, solo cerramos. Pero idealmente seleccionamos.
-            // Para asegurar, simulamos la selección con los datos que tenemos:
-            // Nota: Esto funciona visualmente, pero necesitamos el ID real para el hidden input.
-            // Si tu API retorna el objeto creado:
             if(d.id) {
                 seleccionarProveedor(d.id, payload.name, docLabel, payload.documentNumber);
             } else {
-                // Si la API solo devuelve un mensaje, forzamos una búsqueda rápida para obtener el ID
-                 buscarPersona(payload.documentNumber); // Esto llenará la lista y el usuario podrá hacer click rápido
+                 buscarPersona(payload.documentNumber); 
             }
-
         } else {
             if(d.errors) d.errors.forEach(e => toastr.error(e));
             else if(d.message) toastr.error(d.message);
@@ -528,7 +625,6 @@ async function guardarNuevoProveedor() {
 
 function cerrarModal(id){$(`#${id}`).fadeOut(200);}
 
-// 6. DETALLES
 async function abrirModalDetalle(purchaseId) {
     if(!purchaseId) return;
     $('#modalDetalle').css('display', 'flex'); $('#modalLoader').show(); $('#modalContentBody').hide();  
@@ -539,7 +635,6 @@ async function abrirModalDetalle(purchaseId) {
         let vNum = item.voucherNumber || '-';
         $('#m_serieNumero').text(vNum);
         
-        // FECHA EMISIÓN (SOLO FECHA)
         $('#m_fechaEmision').text(formatearFechaPeru(item.issueDate, false));
         $('#m_proveedor').text(item.personName || 'Sin Nombre');
         
@@ -547,7 +642,6 @@ async function abrirModalDetalle(purchaseId) {
         $('#m_ruc').text(dNum ? `${dType}: ${dNum}` : '-');
         $('#m_almacen').text(item.warehouse || '-'); $('#m_moneda').text(item.currency || 'Soles');
         
-        // FECHA REGISTRO (CON HORA)
         const fechaReg = item.createdDate || item.auditCreateDate || item.issueDate;
         $('#m_fechaRegistro').text(formatearFechaPeru(fechaReg, true));
         
@@ -573,7 +667,6 @@ async function abrirModalDetalle(purchaseId) {
                 </tr>`);
             });
         }
-        // TOTALES DE API
         $('#m_totalNoGravado').text(`S/ ${formatoMoneda(item.exempt)}`);
         $('#m_totalSubtotal').text(`S/ ${formatoMoneda(item.subTotal)}`);
         $('#m_totalIgv').text(`S/ ${formatoMoneda(item.taxAmount)}`);
