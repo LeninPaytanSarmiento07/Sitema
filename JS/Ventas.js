@@ -12,6 +12,9 @@ const EP_IGV = `${API_BASE}/IGVType`;
 const EP_CATEGORY = `${API_BASE}/Category`;
 const EP_DOC_TYPES = `${API_BASE}/DocumentType/select`;
 
+// NUEVA CONSTANTE PARA LA SERIE/NUMERO
+const EP_VOUCHER_SERIE = `${API_BASE}/VoucherSerie/next-number`;
+
 let currentPage = 1;
 let pageSize = 10;
 let totalPages = 1;
@@ -112,6 +115,13 @@ $(document).ready(function() {
         $('#ncli_numeroDoc').removeClass('error');
         $('#error_ncli_numeroDoc').removeClass('show');
     });
+
+    // =======================================================
+    // NUEVO EVENTO: CAMBIO DE TIPO DE DOCUMENTO (FACTURA/BOLETA)
+    // =======================================================
+    $('#nv_tipoDoc').on('change', function() {
+        obtenerSiguienteNumero();
+    });
 });
 
 function formatoMoneda(v) { if (v == null || isNaN(v)) return "0.00"; return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -164,6 +174,9 @@ function limpiarFormularioVenta() {
     $('#nv_buscarCliente').val('');
     $('#nv_idCliente').val('');
     $('#nv_buscarProducto').val('');
+    
+    // Limpiar el nuevo campo de serie
+    $('#nv_serieNumero').val('');
 
     // 2. Ocultar elementos UI
     $('#btnLimpiarCliente').hide();
@@ -194,11 +207,62 @@ async function abrirModalNuevaVenta() {
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Venta");
     
     cargarDropdown(EP_WAREHOUSE, 'nv_almacen'); 
-    cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); 
+    
+    // Cargar tipos de documento y luego obtener el número para la primera opción
+    await cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); 
+    // Trigger para obtener el número por defecto del primer elemento cargado
+    if($('#nv_tipoDoc').val()) {
+        obtenerSiguienteNumero();
+    }
+
     cargarDropdown(EP_CURRENCY, 'nv_moneda');
 }
 
-async function cargarDropdown(u,e){ try{const r=await fetch(u);const d=await r.json();const s=$(`#${e}`);s.empty();d.forEach(i=>{s.append(`<option value="${i.id}">${i.description||i.name||i.text||i.symbol||"Sin Nombre"}</option>`);});}catch(x){console.error(x);} }
+async function cargarDropdown(u,e){ 
+    try{
+        const r=await fetch(u);
+        const d=await r.json();
+        const s=$(`#${e}`);
+        s.empty();
+        d.forEach(i=>{
+            s.append(`<option value="${i.id}">${i.description||i.name||i.text||i.symbol||"Sin Nombre"}</option>`);
+        });
+    }catch(x){console.error(x);} 
+}
+
+// =========================================================
+//  NUEVA FUNCIÓN: OBTENER SIGUIENTE NÚMERO DE COMPROBANTE
+// =========================================================
+async function obtenerSiguienteNumero() {
+    const tipoDocId = $('#nv_tipoDoc').val();
+    const $inputSerie = $('#nv_serieNumero');
+    
+    // Limpiar mientras carga
+    $inputSerie.val('Cargando...');
+    
+    if(!tipoDocId) {
+        $inputSerie.val('');
+        return;
+    }
+
+    try {
+        const url = `${EP_VOUCHER_SERIE}?voucherTypeId=${tipoDocId}`;
+        const response = await fetch(url);
+        
+        if(response.ok) {
+            const data = await response.json();
+            // Data esperada: { "serie": "F001", "nextNumber": "00000010", "fullNumber": "F001-00000010" }
+            $inputSerie.val(data.fullNumber || `${data.serie}-${data.nextNumber}`);
+        } else {
+            console.error('Error al obtener serie');
+            $inputSerie.val('Error al cargar');
+        }
+    } catch(e) {
+        console.error(e);
+        $inputSerie.val('Error de conexión');
+    }
+}
+
 
 // =========================================================
 //  LÓGICA: BUSCADOR DE CLIENTES
