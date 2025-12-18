@@ -19,64 +19,19 @@
     </div>
 
     <ul class="sidebar-links">
-        <li>
-            <a href="Productos.html" class="active">
-                <i class='bx bx-cube icon'></i>
-                <span class="text">Productos</span>
-            </a>
-        </li>
-        <li>
-            <a href="Categorias.html">
-                <i class='bx bx-purchase-tag-alt icon'></i>
-                <span class="text">Categorías</span>
-            </a>
-        </li>
-        <li>
-            <a href="Inventario.html">
-                <i class='bx bx-clipboard icon'></i>
-                <span class="text">Inventario</span>
-            </a>
-        </li>
-        <li>
-            <a href="Movimientos.html">
-                <i class='bx bx-transfer icon'></i>
-                <span class="text">Movimientos</span>
-            </a>
-        </li>
-        <li>
-            <a href="Ajuste_de_inventario.html">
-                <i class='bx bx-slider-alt icon'></i>
-                <span class="text">Ajuste Inv.</span>
-            </a>
-        </li>
-        <li>
-            <a href="Almacenes.html">
-                <i class='bx bx-building-house icon'></i>
-                <span class="text">Almacenes</span>
-            </a>
-        </li>
+        <li><a href="Productos.html" class="active"><i class='bx bx-cube icon'></i><span class="text">Productos</span></a></li>
+        <li><a href="Categorias.html"><i class='bx bx-purchase-tag-alt icon'></i><span class="text">Categorías</span></a></li>
+        <li><a href="Inventario.html"><i class='bx bx-clipboard icon'></i><span class="text">Inventario</span></a></li>
+        <li><a href="Movimientos.html"><i class='bx bx-transfer icon'></i><span class="text">Movimientos</span></a></li>
+        <li><a href="Ajuste_de_inventario.html"><i class='bx bx-slider-alt icon'></i><span class="text">Ajuste Inv.</span></a></li>
+        <li><a href="Almacenes.html"><i class='bx bx-building-house icon'></i><span class="text">Almacenes</span></a></li>
         
         <h4>Ventas y Compras</h4>
-        <li>
-            <a href="Compras.html">
-                <i class='bx bx-cart-add icon'></i>
-                <span class="text">Compras</span>
-            </a>
-        </li>
-        <li>
-            <a href="Ventas.html">
-                <i class='bx bx-cart-download icon'></i>
-                <span class="text">Ventas</span>
-            </a>
-        </li>
+        <li><a href="Compras.html"><i class='bx bx-cart-add icon'></i><span class="text">Compras</span></a></li>
+        <li><a href="Ventas.html"><i class='bx bx-cart-download icon'></i><span class="text">Ventas</span></a></li>
         
         <h4>Administración</h4>
-        <li>
-            <a href="Personas.html">
-                <i class='bx bx-group icon'></i>
-                <span class="text">Personas</span>
-            </a>
-        </li>
+        <li><a href="Personas.html"><i class='bx bx-group icon'></i><span class="text">Personas</span></a></li>
     </ul>
 </aside>
 
@@ -144,9 +99,14 @@
                 <div class="form-row full">
                     <div class="form-group">
                         <label for="categoria">Categoría *</label>
-                        <select id="categoria" name="categoria">
-                            <option value="">Seleccionar...</option>
-                        </select>
+                        <div class="input-with-button">
+                            <select id="categoria" name="categoria">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                            <button type="button" class="btn-add-inline" onclick="abrirModalNuevaCategoria()" title="Crear nueva categoría">
+                                ➕ Crear Categoría
+                            </button>
+                        </div>
                         <span class="error-message" id="errorCategoria">La categoría es requerida</span>
                     </div>
                 </div>
@@ -179,15 +139,33 @@
         </form>
     </dialog>
 
+    <dialog class="modal-dialog small-modal" id="modalNuevaCategoria">
+        <div class="modal-header">
+            <h3>Nueva Categoría</h3>
+            <button class="btn-close-modal" onclick="cerrarModalNuevaCategoria()">×</button>
+        </div>
+        <form id="formNuevaCategoria" onsubmit="event.preventDefault(); guardarNuevaCategoria();">
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Nombre *</label>
+                    <input type="text" id="cat_nombre" class="form-control" placeholder="Ej: Bebidas">
+                    <span class="error-message" id="error_cat_nombre">Requerido</span>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="cat_descripcion" class="form-control" placeholder="Opcional"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancelar" onclick="cerrarModalNuevaCategoria()">Cancelar</button>
+                <button type="submit" class="btn-modal btn-guardar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
     <div class="search-container">
         <div class="search-box">
-            <input 
-                type="text" 
-                id="searchInput" 
-                class="search-input" 
-                placeholder="Buscar por nombre o código de producto..."
-                autocomplete="off"
-            >
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre o código de producto..." autocomplete="off">
             <button class="clear-search" id="clearSearch">×</button>
             <span class="search-icon">🔍</span>
         </div>
@@ -218,10 +196,7 @@
     </div>
 
     <div class="pagination-container">
-        <div class="pagination-info">
-            Mostrando <span id="rangeStart">0</span> - <span id="rangeEnd">0</span> de <span id="totalCount">0</span> productos
-        </div>
-        
+        <div class="pagination-info">Mostrando <span id="rangeStart">0</span> - <span id="rangeEnd">0</span> de <span id="totalCount">0</span> productos</div>
         <div class="pagination-controls">
             <div class="page-size-selector">
                 <label for="pageSize">Mostrar:</label>
@@ -232,13 +207,10 @@
                     <option value="20">20</option>
                 </select>
             </div>
-            
             <div class="pagination-buttons">
                 <button class="page-btn" id="btnFirst" title="Primera página">⏮</button>
                 <button class="page-btn" id="btnPrev" title="Anterior">◀</button>
-                <div class="page-number">
-                    <span id="currentPageDisplay">1</span> / <span id="totalPagesDisplay">1</span>
-                </div>
+                <div class="page-number"><span id="currentPageDisplay">1</span> / <span id="totalPagesDisplay">1</span></div>
                 <button class="page-btn" id="btnNext" title="Siguiente">▶</button>
                 <button class="page-btn" id="btnLast" title="Última página">⏭</button>
             </div>
@@ -249,7 +221,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="../JS/Productos.js"></script>
-
 
 </body>
 </html>

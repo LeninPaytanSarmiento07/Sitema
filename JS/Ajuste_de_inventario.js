@@ -349,4 +349,16 @@ function guardarAjuste() {
 }
 
 function cerrarModal(id) { $(`#${id}`).fadeOut(200); }
-$(window).click(function(e) { if ($(e.target).hasClass('modal-overlay')) $(e.target).fadeOut(200); });
+
+// ===============================================
+// GESTIÓN DE CLICS FUERA DE MODAL (BLOQUEO)
+// ===============================================
+$(window).click(function(e) { 
+    if ($(e.target).hasClass('modal-overlay')) {
+        // Bloquear cierre al hacer clic fuera para el modal de nuevo ajuste
+        if ($(e.target).attr('id') === 'modalNuevoAjuste') {
+            return;
+        }
+        $(e.target).fadeOut(200); 
+    }
+});

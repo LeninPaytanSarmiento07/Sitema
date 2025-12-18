@@ -84,6 +84,45 @@ $(document).ready(function() {
     });
 
     // ==========================================
+    // NUEVA LÓGICA: DETECTAR "NO DOMICILIADO"
+    // ==========================================
+    $('#nc_tipoDoc').on('change', function() {
+        const selectedText = $(this).find("option:selected").text().toLowerCase();
+        const isNoDomiciliado = selectedText.includes("no domiciliado");
+        
+        const $serie = $('#nc_serie');
+        const $numero = $('#nc_numero');
+        const $errorSerie = $('#error_nc_serie');
+        const $errorNumero = $('#error_nc_numero');
+
+        if (isNoDomiciliado) {
+            // 1. Bloquear, limpiar y CAMBIAR COLOR a gris
+            $serie.prop('disabled', true)
+                  .val('')
+                  .removeClass('error')
+                  .css('background-color', '#e9ecef'); // Color gris visual
+            
+            $errorSerie.removeClass('show');
+
+            // 2. Cambiar validación de Número a 20 caracteres
+            $numero.attr('maxlength', '20');
+            $errorNumero.text('Requerido (Máx 20)'); 
+        } else {
+            // Restaurar comportamiento normal y COLOR blanco
+            $serie.prop('disabled', false)
+                  .css('background-color', '#fff'); // Restaurar blanco
+            
+            $numero.attr('maxlength', '8');
+            $errorNumero.text('Requerido (Máx 8)');
+            
+            // Si el usuario había escrito más de 8 y cambia el tipo, cortamos el excedente
+            if($numero.val().length > 8) {
+                $numero.val($numero.val().substring(0, 8));
+            }
+        }
+    });
+
+    // ==========================================
     // LOGICA DE FILTROS DE FECHA (CON X)
     // ==========================================
     
@@ -206,38 +245,41 @@ function irAPagina(pagina) {
 }
 
 // ==========================================
-// NUEVA FUNCIÓN: LIMPIAR FORMULARIO COMPRA
+// FUNCIÓN: LIMPIAR FORMULARIO COMPRA
 // ==========================================
 function limpiarFormularioCompra() {
-    // 1. Limpiar Inputs de Texto y Hidden
+    // 1. Limpiar Inputs
     $('#nc_serie').val('');
     $('#nc_numero').val('');
     $('#nc_buscarProveedor').val('');
     $('#nc_idProveedor').val('');
     $('#nc_buscarProducto').val('');
     
-    // 2. Resetear Fecha a Hoy
+    // 2. Resetear Fecha
     document.getElementById('nc_fecha').valueAsDate = new Date();
 
-    // 3. Ocultar botones de limpieza/listas
+    // 3. Ocultar botones UI
     $('#btnLimpiarProveedor').hide();
     $('#listaProveedores').hide();
     $('#listaProductos').hide();
 
-    // 4. Vaciar Tabla de Productos
+    // 4. Vaciar Tabla
     $('#nc_tablaProductos').empty();
 
-    // 5. Resetear Totales Visuales y Clases de Error
-    calcularTotalesGlobales(); // Esto pone todo a 0 porque la tabla está vacía
+    // 5. Resetear Totales Visuales y Errores
+    calcularTotalesGlobales();
     $('.form-control').removeClass('error');
     $('.error-message').removeClass('show');
+
+    // 6. RESTAURAR ESTADO ORIGINAL
+    $('#nc_serie').prop('disabled', false).css('background-color', '#fff'); // Restaurar color
+    $('#nc_numero').attr('maxlength', '8');
+    $('#error_nc_numero').text('Requerido (Máx 8)');
 }
 
 // 2. MODAL NUEVA COMPRA
 async function abrirModalNuevaCompra() {
     $('#modalNuevaCompra').css('display', 'flex');
-    
-    // Ejecutamos limpieza al abrir para asegurar estado inicial
     limpiarFormularioCompra();
     
     const $btn = $('#modalNuevaCompra .btn-save-modal');
@@ -460,10 +502,29 @@ function guardarCompra() {
     const req = ['nc_almacen', 'nc_tipoDoc', 'nc_fecha', 'nc_moneda'];
     req.forEach(id => { if(!$(`#${id}`).val()) { $(`#${id}`).addClass('error'); $(`#${id}`).siblings('.error-message').addClass('show'); isValid = false; } });
 
+    // DETECTAR SI ES "NO DOMICILIADO"
+    const tipoDocText = $('#nc_tipoDoc option:selected').text().toLowerCase();
+    const isNoDomiciliado = tipoDocText.includes("no domiciliado");
+
+    // VALIDAR SERIE (Solo si NO es no domiciliado)
     const serie = $('#nc_serie').val().trim();
-    if(serie.length !== 4) { $('#nc_serie').addClass('error'); $('#error_nc_serie').addClass('show'); isValid = false; }
+    if (!isNoDomiciliado) {
+        if(serie.length !== 4) { 
+            $('#nc_serie').addClass('error'); 
+            $('#error_nc_serie').addClass('show'); 
+            isValid = false; 
+        }
+    }
+
+    // VALIDAR NÚMERO (Dinámico)
     const numero = $('#nc_numero').val().trim();
-    if(!numero || numero.length > 8) { $('#nc_numero').addClass('error'); $('#error_nc_numero').addClass('show'); isValid = false; }
+    const maxNumLen = isNoDomiciliado ? 20 : 8;
+    if(!numero || numero.length > maxNumLen) { 
+        $('#nc_numero').addClass('error'); 
+        $('#error_nc_numero').text(`Requerido (Máx ${maxNumLen})`).addClass('show'); 
+        isValid = false; 
+    }
+
     if(!$('#nc_idProveedor').val()){ $('#nc_buscarProveedor').addClass('error'); $('#error_nc_proveedor').addClass('show'); isValid = false; }
 
     if(!isValid) { toastr.error("Corrija los errores en el formulario."); return; }
@@ -490,9 +551,12 @@ function guardarCompra() {
     const originalText = $btn.html();
     $btn.prop('disabled', true).html("<i class='bx bx-loader-alt bx-spin'></i> Guardando...");
 
+    // Enviar Serie como null o vacío si está deshabilitada
+    const payloadSerie = isNoDomiciliado ? null : serie;
+
     const nuevaCompra = {
         warehouseId: $('#nc_almacen').val(), voucherTypeId: $('#nc_tipoDoc').val(), currencyId: $('#nc_moneda').val(), personId: $('#nc_idProveedor').val(),
-        serie: serie, number: numero, issueDate: $('#nc_fecha').val(), details: detalles
+        serie: payloadSerie, number: numero, issueDate: $('#nc_fecha').val(), details: detalles
     };
 
     fetch(EP_PURCHASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevaCompra) })
@@ -634,7 +698,7 @@ async function guardarNuevoProveedor() {
 }
 
 // ==========================================
-// FUNCIÓN CERRAR MODAL (MODIFICADA PARA LIMPIEZA)
+// FUNCIÓN CERRAR MODAL (MODIFICADA)
 // ==========================================
 function cerrarModal(id){
     $(`#${id}`).fadeOut(200);
@@ -696,4 +760,19 @@ async function abrirModalDetalle(purchaseId) {
     } catch(e){ cerrarModal('modalDetalle'); }
 }
 
-$(window).click(function(e) { if ($(e.target).hasClass('modal-overlay')) $(e.target).fadeOut(200); });
+// GESTIÓN GLOBAL DE CLICS FUERA DE MODAL
+// Evita cerrar los modales de creación si se hace clic en el fondo
+$(window).click(function(e) { 
+    if ($(e.target).hasClass('modal-overlay')) {
+        const id = $(e.target).attr('id');
+        // Lista de modales que NO deben cerrarse al hacer clic fuera
+        const modalesBloqueados = ['modalNuevaCompra', 'modalCrearProducto', 'modalCrearProveedor'];
+        
+        if(modalesBloqueados.includes(id)) {
+            return; // No hacer nada, evitar el cierre
+        }
+        
+        // Para otros modales (como el de detalle), sí permitir cerrar
+        $(e.target).fadeOut(200); 
+    }
+});

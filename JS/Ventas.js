@@ -210,7 +210,23 @@ async function abrirModalNuevaVenta() {
     
     // Cargar tipos de documento y luego obtener el número para la primera opción
     await cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); 
-    // Trigger para obtener el número por defecto del primer elemento cargado
+
+    // ==========================================
+    // LOGICA PARA DESHABILITAR "NO DOMICILIADO"
+    // ==========================================
+    $('#nv_tipoDoc option').each(function() {
+        if($(this).text().toLowerCase().includes('no domiciliado')) {
+            $(this).prop('disabled', true); // Deshabilitar la opción
+        }
+    });
+
+    // Asegurarse de que no esté seleccionado "No domiciliado" por defecto
+    // Si la opción seleccionada está deshabilitada, seleccionar la primera disponible
+    if($('#nv_tipoDoc option:selected').prop('disabled')){
+         $('#nv_tipoDoc').val($('#nv_tipoDoc option:not(:disabled):first').val());
+    }
+
+    // Trigger para obtener el número por defecto del primer elemento (válido) cargado
     if($('#nv_tipoDoc').val()) {
         obtenerSiguienteNumero();
     }
@@ -304,7 +320,7 @@ function seleccionarCliente(id, txt){
 }
 
 // --------------------------------------------------------------------------------------
-// LOGICA DE BUSQUEDA DE PRODUCTOS MODIFICADA (Toggle / Selección y Quitado)
+// LOGICA DE BUSQUEDA DE PRODUCTOS
 // --------------------------------------------------------------------------------------
 async function buscarProducto(t){ 
     const l=$('#listaProductos'); const a=$('#nv_almacen').val();
@@ -593,4 +609,22 @@ function cerrarModal(id){
 }
 
 async function abrirModalDetalle(id) { if(!id) return; $('#modalDetalleVenta').css('display','flex'); $('#modalLoader').show(); $('#modalContentBody').hide(); try { const r = await fetch(`${EP_SALE}/${id}`); const d = await r.json(); $('#mv_tipoDoc').text(d.voucherType||'Venta'); $('#mv_serieNumero').text(d.voucherNumber||'-'); $('#mv_fechaEmision').text(formatearFechaPeru(d.issueDate,false)); $('#mv_cliente').text(d.personName||'-'); const dn=d.personDocumentNumber||''; let dt=d.personDocumentType||(dn.length===11?'RUC':'DNI'); $('#mv_docCliente').text(dn?`${dt}: ${dn}`:'-'); $('#mv_almacen').text(d.warehouse||'-'); $('#mv_moneda').text(d.currency||'-'); $('#mv_fechaRegistro').text(formatearFechaPeru(d.createdDate||d.issueDate,true)); const t=$('#modalTableBody'); t.empty(); if(d.details){ d.details.forEach(i=>{ t.append(`<tr><td><span style="background:#f4f4f4;padding:2px 6px;border-radius:4px;border:1px solid #ddd;font-weight:600">${i.productCode||'-'}</span></td><td><strong>${i.productName||'-'}</strong></td><td>${i.unitOfMeasure||'UNI'}</td><td>${i.igvType||'-'}</td><td class="text-right">${(i.quantity||0).toFixed(2)}</td><td class="text-right">S/ ${formatoMoneda(i.unitPrice)}</td><td class="text-right">S/ ${formatoMoneda(i.amount)}</td><td class="text-right">S/ ${formatoMoneda(i.taxAmount)}</td><td class="text-right"><strong>S/ ${formatoMoneda(i.lineTotal)}</strong></td></tr>`); }); } $('#mv_totalNoGravado').text(`S/ ${formatoMoneda(d.exempt)}`); $('#mv_totalSubtotal').text(`S/ ${formatoMoneda(d.subTotal)}`); $('#mv_totalIgv').text(`S/ ${formatoMoneda(d.taxAmount)}`); $('#mv_totalFinal').text(`S/ ${formatoMoneda(d.total)}`); $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200); } catch(e) { toastr.error("Error al cargar"); cerrarModal('modalDetalleVenta'); } }
-$(window).click(e=>{if($(e.target).hasClass('modal-overlay'))$(e.target).fadeOut(200);});
+
+// ===============================================
+// GESTIÓN DE CLICS FUERA DE MODAL (BLOQUEO)
+// ===============================================
+$(window).click(e => {
+    if ($(e.target).hasClass('modal-overlay')) {
+        // IDs de los modales que NO deben cerrarse al hacer clic fuera
+        const modalesBloqueados = ['modalNuevaVenta', 'modalCrearCliente', 'modalCrearProducto'];
+        const idActual = $(e.target).attr('id');
+
+        // Si el ID del modal clickeado está en la lista de bloqueados, no hacer nada (no cerrar)
+        if (modalesBloqueados.includes(idActual)) {
+            return; 
+        }
+
+        // Si no está bloqueado (ej: Detalle), cerrar normal
+        $(e.target).fadeOut(200);
+    }
+});

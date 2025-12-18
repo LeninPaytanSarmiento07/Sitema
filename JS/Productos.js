@@ -49,6 +49,7 @@ let productosCache = [];
 
 const BASE_URL = 'https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api';
 const API_URL = `${BASE_URL}/Product`;
+const API_URL_CATEGORY = `${BASE_URL}/Category`; // Endpoint Categoría
 
 const modal = document.getElementById('modalProducto');
 const btnNuevoProducto = document.getElementById('btnNuevoProducto');
@@ -57,6 +58,14 @@ const btnCancelar = document.getElementById('btnCancelar');
 const btnGuardar = document.getElementById('btnGuardar');
 const formProducto = document.getElementById('formProducto');
 const modalTitle = document.getElementById('modalTitle');
+
+// ===============================================
+// PREVENIR CIERRE CON ESCAPE O CLIC FUERA
+// ===============================================
+// El evento 'cancel' se dispara al presionar ESC en un <dialog>
+modal.addEventListener('cancel', (e) => {
+    e.preventDefault(); // Evita que se cierre
+});
 
 // Función para limpiar errores de validación
 function limpiarErrores() {
@@ -185,7 +194,6 @@ async function cargarUnidadesMedida() {
             select.appendChild(option);
         });
         
-        console.log('✓ Unidades de medida cargadas:', data.length);
     } catch (error) {
         console.error('Error cargando unidades de medida:', error);
         mostrarToastrModal('error', 'No se pudieron cargar las unidades de medida', 'Error de carga');
@@ -210,7 +218,6 @@ async function cargarTiposIGV() {
             select.appendChild(option);
         });
         
-        console.log('✓ Tipos de IGV cargados:', data.length);
     } catch (error) {
         console.error('Error cargando tipos de IGV:', error);
         mostrarToastrModal('error', 'No se pudieron cargar los tipos de IGV', 'Error de carga');
@@ -218,7 +225,7 @@ async function cargarTiposIGV() {
 }
 
 // Función para cargar las Categorías
-async function cargarCategorias() {
+async function cargarCategorias(selectIdToSet = null) {
     try {
         const response = await fetch(`${BASE_URL}/Category`);
         if (!response.ok) throw new Error('Error al cargar categorías');
@@ -226,16 +233,23 @@ async function cargarCategorias() {
         const data = await response.json();
         const select = document.getElementById('categoria');
         
+        // Guardar valor seleccionado actual si existe, o usar el que pasamos por parámetro
+        const currentValue = selectIdToSet || select.value;
+        
         select.innerHTML = '<option value="">Seleccionar...</option>';
         
         data.forEach(categoria => {
             const option = document.createElement('option');
             option.value = categoria.id;
-            option.textContent = categoria.description || categoria.name; // Usar description o name
+            option.textContent = categoria.description || categoria.name; 
             select.appendChild(option);
         });
         
-        console.log('✓ Categorías cargadas:', data.length);
+        // Restaurar valor seleccionado
+        if (currentValue) {
+            select.value = currentValue;
+        }
+        
     } catch (error) {
         console.error('Error cargando categorías:', error);
         mostrarToastrModal('error', 'No se pudieron cargar las categorías', 'Error de carga');
@@ -251,13 +265,10 @@ function cargarDatosProducto(productId) {
             throw new Error('Producto no encontrado en cache');
         }
         
-        console.log('Producto encontrado en cache:', producto);
-        
         document.getElementById('codigo').value = producto.code || '';
         document.getElementById('nombre').value = producto.name || '';
         document.getElementById('descripcion').value = producto.description || '';
         
-        // Usar setTimeout para asegurar que los selects estén poblados antes de intentar setear el valor
         setTimeout(() => {
             document.getElementById('unidadMedida').value = producto.unitOfMeasureId || '';
             document.getElementById('tipoIGV').value = producto.igvTypeId || '';
@@ -267,7 +278,6 @@ function cargarDatosProducto(productId) {
         document.getElementById('precioCompra').value = producto.purchasePrice || 0;
         document.getElementById('precioVenta').value = producto.salePrice || 0;
         
-        console.log('✓ Datos del producto cargados correctamente');
     } catch (error) {
         console.error('Error cargando datos del producto:', error);
         mostrarToastrModal('error', 'No se pudieron cargar los datos del producto', 'Error');
@@ -284,11 +294,10 @@ btnNuevoProducto.addEventListener('click', async () => {
     formProducto.reset();
     limpiarErrores();
     
-    document.getElementById('precioCompra').value = 0; // Asegurar 0 en compra
+    document.getElementById('precioCompra').value = 0; 
     
     modal.showModal();
     
-    // Cargar listas de opciones en paralelo
     await Promise.all([
         cargarUnidadesMedida(),
         cargarTiposIGV(),
@@ -308,7 +317,6 @@ async function abrirModalEdicion(productId) {
         
         modal.showModal();
         
-        // Cargar listas de opciones en paralelo
         await Promise.all([
             cargarUnidadesMedida(),
             cargarTiposIGV(),
@@ -348,12 +356,7 @@ btnCerrarModal.addEventListener('click', cerrarModal);
 // Cerrar modal con botón Cancelar
 btnCancelar.addEventListener('click', cerrarModal);
 
-// Cerrar modal al hacer clic fuera (solo si es <dialog>)
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        cerrarModal();
-    }
-});
+// ELIMINADO: Evento click outside para cerrar modal. Ahora es modal nativo y no se cierra solo.
 
 // Manejar envío del formulario (POST o PUT)
 formProducto.addEventListener('submit', async (e) => {
@@ -387,16 +390,11 @@ formProducto.addEventListener('submit', async (e) => {
         if (isEditMode) {
             finalUrl = `${API_URL}/${editingProductId}`;
             method = 'PUT';
-            console.log('Actualizando producto:', editingProductId, producto);
-        } else {
-            console.log('Creando producto:', producto);
         }
 
         response = await fetch(finalUrl, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(producto)
         });
         
@@ -409,43 +407,100 @@ formProducto.addEventListener('submit', async (e) => {
             
             setTimeout(() => {
                 cerrarModal();
-                // Recargar productos manteniendo la página y búsqueda actual
                 cargarProductosVentas1(currentPage, currentPageSize, searchTerm);
             }, 1500);
             
         } else {
             const errorData = await response.json();
-            console.error('Error del servidor:', errorData);
-            
             let errorMessage = 'Ocurrió un error desconocido';
             
             if (errorData.errors && Array.isArray(errorData.errors)) {
                 errorMessage = errorData.errors.join('<br>');
-            } else if (errorData.errors && typeof errorData.errors === 'object') {
-                const messages = [];
-                Object.values(errorData.errors).forEach(errorArray => {
-                    if (Array.isArray(errorArray)) {
-                        messages.push(...errorArray);
-                    }
-                });
-                errorMessage = messages.join('<br>');
             } else if (errorData.message) {
                 errorMessage = errorData.message;
-            } else if (typeof errorData === 'string') {
-                errorMessage = errorData;
             }
             
             mostrarToastrModal('error', errorMessage, isEditMode ? 'Error al actualizar' : 'Error al crear');
         }
         
     } catch (error) {
-        console.error('Error:', error);
         mostrarToastrModal('error', 'Error de conexión con el servidor', 'Error de conexión');
     } finally {
         btnGuardar.disabled = false;
         btnGuardar.textContent = isEditMode ? 'Actualizar' : 'Guardar';
     }
 });
+
+
+// ==========================================
+// NUEVA LOGICA: MODAL CATEGORIA
+// ==========================================
+const modalCat = document.getElementById('modalNuevaCategoria');
+
+// BLOQUEAR CIERRE CON ESC PARA EL MODAL CATEGORÍA
+modalCat.addEventListener('cancel', (e) => {
+    e.preventDefault();
+});
+
+function abrirModalNuevaCategoria() {
+    // Usar showModal() del elemento dialog (se apila automáticamente)
+    modalCat.showModal();
+    
+    document.getElementById('formNuevaCategoria').reset();
+    document.getElementById('cat_nombre').classList.remove('error');
+    document.getElementById('error_cat_nombre').classList.remove('show');
+}
+
+function cerrarModalNuevaCategoria() {
+    modalCat.close();
+}
+
+async function guardarNuevaCategoria() {
+    const nombreInput = document.getElementById('cat_nombre');
+    const descInput = document.getElementById('cat_descripcion');
+    const errorMsg = document.getElementById('error_cat_nombre');
+    
+    const nombre = nombreInput.value.trim();
+    
+    if (!nombre) {
+        nombreInput.classList.add('error');
+        errorMsg.classList.add('show');
+        return;
+    } else {
+        nombreInput.classList.remove('error');
+        errorMsg.classList.remove('show');
+    }
+
+    const payload = {
+        name: nombre,
+        description: descInput.value.trim() || null
+    };
+
+    try {
+        const response = await fetch(API_URL_CATEGORY, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            mostrarToastrModal('success', 'Categoría creada correctamente', 'Éxito');
+            cerrarModalNuevaCategoria();
+            cargarCategorias(); // Recargar el select del modal principal
+        } else {
+            const errorData = await response.json();
+            let msg = 'Error al crear categoría';
+            if (errorData.errors && Array.isArray(errorData.errors)) msg = errorData.errors[0];
+            else if (errorData.message) msg = errorData.message;
+            
+            mostrarToastrModal('error', msg, 'Error');
+        }
+    } catch (error) {
+        console.error(error);
+        mostrarToastrModal('error', 'Error de conexión', 'Error');
+    }
+}
+
 
 // Función de debounce
 function debounce(func, delay) {
@@ -457,21 +512,10 @@ function debounce(func, delay) {
 
 // Función principal para cargar productos
 async function cargarProductosVentas1(pageNumber = 1, pageSize = 25, search = '') {
-    console.log(`Cargando página ${pageNumber} con ${pageSize} elementos, búsqueda: "${search}"`);
-    
     const tbody = document.querySelector('.tabla-productos tbody');
-    if (!tbody) {
-        console.error('No se encontró la tabla');
-        return;
-    }
+    if (!tbody) return;
 
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="8" style="text-align: center; padding: 40px;">
-                <div class="loading">Cargando productos...</div>
-            </td>
-        </tr>
-    `;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px;"><div class="loading">Cargando productos...</div></td></tr>`;
 
     try {
         let url = `${API_URL}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
@@ -488,9 +532,7 @@ async function cargarProductosVentas1(pageNumber = 1, pageSize = 25, search = ''
         const data = await response.json();
         const productos = data.items || [];
         
-        productosCache = productos; // Almacenar en caché para edición
-        
-        // Actualizar variables de paginación
+        productosCache = productos; 
         currentPage = data.pageNumber || pageNumber;
         currentPageSize = data.pageSize || pageSize;
         totalCount = data.totalCount || 0;
@@ -498,24 +540,8 @@ async function cargarProductosVentas1(pageNumber = 1, pageSize = 25, search = ''
         hasPreviousPage = data.hasPreviousPage || false;
         hasNextPage = data.hasNextPage || false;
         
-        console.log('Datos recibidos:', { 
-            productos: productos.length, 
-            totalCount, 
-            totalPages, 
-            currentPage,
-        });
-        
         if (productos.length === 0) {
-            const mensaje = search && search.trim() !== '' 
-                ? `No se encontraron productos que coincidan con "${search}"`
-                : 'No hay productos disponibles';
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
-                        ${mensaje}
-                    </td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #666;">No se encontraron productos</td></tr>`;
             actualizarPaginacion();
             return;
         }
@@ -542,7 +568,6 @@ async function cargarProductosVentas1(pageNumber = 1, pageSize = 25, search = ''
             tbody.appendChild(tr);
         });
         
-        // Asignar eventos de edición
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
@@ -550,33 +575,21 @@ async function cargarProductosVentas1(pageNumber = 1, pageSize = 25, search = ''
             });
         });
         
-        // Asignar eventos de eliminación (Implementación básica de eliminación)
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
-                if (confirm(`¿Está seguro que desea eliminar el producto con ID: ${productId}?`)) {
+                if (confirm(`¿Está seguro que desea eliminar el producto?`)) {
                     eliminarProducto(productId);
                 }
             });
         });
 
         actualizarPaginacion();
-        console.log('✓ Tabla renderizada correctamente');
         
     } catch (error) {
-        console.error('Error al cargar productos:', error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 40px; color: #dc3545;">
-                    Error al cargar productos: ${error.message}. Verifique la URL de la API.
-                </td>
-            </tr>
-        `;
-        toastr.error('No se pudieron cargar los productos', 'Error de carga');
-        // Asegurar que la paginación muestre 0 si hay un error
-        totalCount = 0;
-        currentPage = 0;
-        totalPages = 0;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #dc3545;">Error al cargar productos</td></tr>`;
+        toastr.error('No se pudieron cargar los productos', 'Error');
+        totalCount = 0; currentPage = 0; totalPages = 0;
         actualizarPaginacion();
     }
 }
@@ -586,27 +599,21 @@ async function eliminarProducto(productId) {
     try {
         const response = await fetch(`${API_URL}/${productId}`, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
 
         if (response.ok) {
             toastr.success('El producto ha sido eliminado correctamente', 'Eliminación exitosa');
-            // Recargar datos, volviendo a la página 1 si la página actual queda vacía
             cargarProductosVentas1(currentPage, currentPageSize, searchTerm);
         } else {
             const errorData = await response.json();
             const errorMessage = errorData.message || 'Error desconocido al eliminar';
             toastr.error(errorMessage, 'Error al eliminar');
-            console.error('Error al eliminar:', errorData);
         }
     } catch (error) {
-        console.error('Error de conexión al eliminar:', error);
         toastr.error('Error de conexión con el servidor', 'Error de conexión');
     }
 }
-
 
 function actualizarPaginacion() {
     const rangeStart = totalCount === 0 ? 0 : ((currentPage - 1) * currentPageSize) + 1;
@@ -628,7 +635,7 @@ function actualizarPaginacion() {
 const realizarBusqueda = debounce((searchValue) => {
     searchTerm = searchValue;
     cargarProductosVentas1(1, currentPageSize, searchTerm);
-}, 500); // Debounce de 500ms
+}, 500);
 
 const searchInput = document.getElementById('searchInput');
 const clearSearchBtn = document.getElementById('clearSearch');
@@ -651,27 +658,11 @@ clearSearchBtn.addEventListener('click', () => {
     searchInput.focus();
 });
 
-// Controles de Paginación
-document.getElementById('btnFirst').addEventListener('click', () => {
-    if (currentPage > 1) cargarProductosVentas1(1, currentPageSize, searchTerm);
-});
+document.getElementById('btnFirst').addEventListener('click', () => { if (currentPage > 1) cargarProductosVentas1(1, currentPageSize, searchTerm); });
+document.getElementById('btnPrev').addEventListener('click', () => { if (hasPreviousPage) cargarProductosVentas1(currentPage - 1, currentPageSize, searchTerm); });
+document.getElementById('btnNext').addEventListener('click', () => { if (hasNextPage) cargarProductosVentas1(currentPage + 1, currentPageSize, searchTerm); });
+document.getElementById('btnLast').addEventListener('click', () => { if (currentPage < totalPages) cargarProductosVentas1(totalPages, currentPageSize, searchTerm); });
+document.getElementById('pageSize').addEventListener('change', (e) => { currentPageSize = parseInt(e.target.value); cargarProductosVentas1(1, currentPageSize, searchTerm); });
 
-document.getElementById('btnPrev').addEventListener('click', () => {
-    if (hasPreviousPage) cargarProductosVentas1(currentPage - 1, currentPageSize, searchTerm);
-});
-
-document.getElementById('btnNext').addEventListener('click', () => {
-    if (hasNextPage) cargarProductosVentas1(currentPage + 1, currentPageSize, searchTerm);
-});
-
-document.getElementById('btnLast').addEventListener('click', () => {
-    if (currentPage < totalPages) cargarProductosVentas1(totalPages, currentPageSize, searchTerm);
-});
-
-document.getElementById('pageSize').addEventListener('change', (e) => {
-    currentPageSize = parseInt(e.target.value);
-    cargarProductosVentas1(1, currentPageSize, searchTerm); // Volver a la página 1 al cambiar el tamaño
-});
-
-// Inicializar la carga de productos al cargar la página
+// Inicializar
 cargarProductosVentas1(1, 5, '');
