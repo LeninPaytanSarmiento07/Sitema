@@ -128,8 +128,17 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class='bx bx-cart-add'></i> Nueva Venta</h3>
-                <span class="close-modal" onclick="cerrarModal('modalNuevaVenta')">&times;</span>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="btnDuplicateSale" class="btn-duplicate" title="Duplicar venta actual en nueva pestaña">
+                        <i class='bx bx-copy'></i> Duplicar/Nueva
+                    </button>
+                    <span class="close-modal" onclick="cerrarModal('modalNuevaVenta')">&times;</span>
+                </div>
             </div>
+
+            <div id="salesTabsBar" class="tabs-bar"></div>
+
             <div class="modal-body">
                 <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
 

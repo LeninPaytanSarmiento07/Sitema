@@ -255,3 +255,87 @@ a { text-decoration: none; }
 .date-select:focus { border-color: #3d4f5d; }
 .btn-clear-date { display: none; color: #ef4444; font-weight: 800; font-size: 18px; cursor: pointer; transition: transform 0.2s; user-select: none; }
 .btn-clear-date:hover { transform: scale(1.2); }
+
+/* =========================================
+   NUEVO: ESTILOS PARA PESTAÑAS (DUPLICAR VENTA)
+   ========================================= */
+
+/* Botón de duplicar en el header */
+.btn-duplicate {
+    padding: 8px 15px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-duplicate:hover {
+    background-color: #f0f0f0;
+    border-color: #bbb;
+}
+
+/* Barra de pestañas */
+.tabs-bar {
+    display: flex;
+    background-color: #e0e0e0;
+    border-bottom: 1px solid #ccc;
+    padding: 5px 15px 0 15px;
+    gap: 2px;
+    overflow-x: auto;
+}
+
+/* Item de pestaña */
+.tab-item {
+    background-color: #e0e0e0; /* Inactivo */
+    padding: 10px 15px;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.tab-item:hover {
+    background-color: #d6d6d6;
+}
+
+/* Pestaña activa */
+.tab-item.active {
+    background-color: #fff;
+    color: #000;
+    font-weight: 700;
+    border-color: #ccc;
+}
+
+/* Botón cerrar pestaña */
+.tab-close {
+    font-size: 14px;
+    color: #cc0000;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    line-height: 1;
+}
+
+.tab-close:hover {
+    background-color: #ffcccc;
+    color: #990000;
+}

@@ -29,6 +29,13 @@ let igvListCache = [];
 let searchResults = {}; 
 let searchTimer = null; 
 
+// ==========================================
+// VARIABLES GESTIÓN DE PESTAÑAS (NUEVO)
+// ==========================================
+let salesTabs = [];       // Array para guardar el estado de cada venta
+let activeTabId = null;   // ID de la pestaña actual
+let tabCounter = 1;       // Contador para generar IDs únicos
+
 toastr.options = { "closeButton": true, "positionClass": "toast-bottom-right", "timeOut": "5000", "preventDuplicates": false };
 
 $(document).ready(function() {
@@ -122,6 +129,17 @@ $(document).ready(function() {
     $('#nv_tipoDoc').on('change', function() {
         obtenerSiguienteNumero();
     });
+
+    // ==========================================
+    // NUEVO EVENTO: BOTÓN DUPLICAR VENTA
+    // ==========================================
+    $('#btnDuplicateSale').click(function() {
+        // 1. Guardar estado actual antes de duplicar
+        if (activeTabId) saveCurrentTabData();
+        
+        // 2. Crear nueva pestaña copiando la actual
+        createTab(true); 
+    });
 });
 
 function formatoMoneda(v) { if (v == null || isNaN(v)) return "0.00"; return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -141,7 +159,6 @@ async function prepararOpcionesIGV() {
 async function fetchVentas(page) {
     const $tbody = $('#ventasBody'); $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">Cargando...</td></tr>');
     try {
-        // SE INCLUYEN startDate Y endDate EN LA URL
         const url = `${EP_SALE}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
         const r = await fetch(url); 
         const d = await r.json();
@@ -156,7 +173,6 @@ async function fetchVentas(page) {
             const dl = v.personDocumentType || (dn.length === 11 ? "RUC" : "DNI");
             const tot = formatoMoneda(v.total);
             
-            // ELIMINADO S/
             $tbody.append(`<tr><td>${f}</td><td style="color:#6b7280">${v.warehouse||'-'}</td><td><span style="background:#1f2937;color:white;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">${v.voucherType||'Doc'}</span></td><td><span style="background:#eff6ff;color:#3b82f6;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:600;border:1px solid #dbeafe">${sn}</span></td><td><div style="font-weight:600;color:#111827">${v.personName||'Cliente'}</div><div style="font-size:11px;color:#6b7280;margin-top:2px"><strong>${dl}:</strong> ${dn}</div></td><td style="color:#4b5563">${v.currency||'-'}</td><td style="font-weight:700;color:#111827">${tot}</td><td class="text-center"><button class="btn-action" onclick="abrirModalDetalle('${v.id}')"><i class='bx bx-show'></i></button></td></tr>`);
         });
 
@@ -188,7 +204,7 @@ function limpiarFormularioVenta() {
     // 3. Vaciar Tabla
     $('#nv_tablaProductos').empty();
 
-    // 4. Resetear Totales Visuales (ELIMINADO S/)
+    // 4. Resetear Totales Visuales
     $('#nv_txtNoGravado').text('0.00');
     $('#nv_txtSubTotal').text('0.00');
     $('#nv_txtIGV').text('0.00');
@@ -199,41 +215,243 @@ function limpiarFormularioVenta() {
     $('.error-message').removeClass('show');
 }
 
+// ==========================================
+// LÓGICA DE PESTAÑAS (TAB MANAGER)
+// ==========================================
+
+function initTabs() {
+    salesTabs = [];
+    tabCounter = 1;
+    activeTabId = null;
+    $('#salesTabsBar').empty();
+    
+    // Crear la primera pestaña por defecto
+    createTab(false);
+}
+
+function createTab(copyFromCurrent = false) {
+    // ==============================================
+    // VALIDACIÓN: MÁXIMO 5 PESTAÑAS
+    // ==============================================
+    if (salesTabs.length >= 5) {
+        toastr.warning("Máximo 5 pestañas permitidas.");
+        return;
+    }
+
+    const newId = tabCounter++;
+    
+    let newData = {
+        id: newId,
+        warehouseId: $('#nv_almacen').val() || '',
+        docTypeId: $('#nv_tipoDoc').val() || '',
+        currencyId: $('#nv_moneda').val() || '',
+        clientId: '',
+        clientName: '',
+        products: [] 
+    };
+
+    // Si es duplicado, copiar datos del actual
+    if (copyFromCurrent && activeTabId) {
+        saveCurrentTabData();
+        const currentData = salesTabs.find(t => t.id === activeTabId);
+        if (currentData) {
+            newData.warehouseId = currentData.warehouseId;
+            newData.docTypeId = currentData.docTypeId;
+            newData.currencyId = currentData.currencyId;
+            newData.clientId = currentData.clientId;
+            newData.clientName = currentData.clientName;
+            newData.products = JSON.parse(JSON.stringify(currentData.products));
+        }
+    } else if (!copyFromCurrent) {
+         if($('#nv_almacen').val()) newData.warehouseId = $('#nv_almacen').val();
+         if($('#nv_tipoDoc').val()) newData.docTypeId = $('#nv_tipoDoc').val();
+         if($('#nv_moneda').val()) newData.currencyId = $('#nv_moneda').val();
+    }
+
+    salesTabs.push(newData);
+    renderTabs();
+    switchTab(newId);
+}
+
+function renderTabs() {
+    const $container = $('#salesTabsBar');
+    $container.empty();
+    
+    salesTabs.forEach(tab => {
+        const activeClass = (tab.id === activeTabId) ? 'active' : '';
+        const closeBtn = salesTabs.length > 1 ? `<span class="tab-close" onclick="event.stopPropagation(); closeTab(${tab.id})">×</span>` : '';
+        
+        $container.append(`
+            <div class="tab-item ${activeClass}" onclick="switchTab(${tab.id})">
+                Venta ${tab.id}
+                ${closeBtn}
+            </div>
+        `);
+    });
+}
+
+function switchTab(tabId) {
+    // 1. Guardar estado de la pestaña actual antes de cambiar
+    if (activeTabId && salesTabs.find(t => t.id === activeTabId)) {
+        saveCurrentTabData();
+    }
+    
+    // 2. Cambiar ID activo
+    activeTabId = tabId;
+    renderTabs();
+    
+    // 3. Cargar datos de la nueva pestaña en el formulario
+    loadTabData(tabId);
+}
+
+function closeTab(tabId) {
+    // Eliminar del array
+    salesTabs = salesTabs.filter(t => t.id !== tabId);
+    
+    // Si cerramos la activa, cambiar a la última disponible
+    if (tabId === activeTabId) {
+        if (salesTabs.length > 0) {
+            switchTab(salesTabs[salesTabs.length - 1].id);
+        } else {
+            // Si no quedan pestañas, cerrar modal
+            cerrarModal('modalNuevaVenta');
+        }
+    } else {
+        renderTabs();
+    }
+}
+
+function saveCurrentTabData() {
+    const currentTab = salesTabs.find(t => t.id === activeTabId);
+    if (!currentTab) return;
+    
+    // Guardar Selects
+    currentTab.warehouseId = $('#nv_almacen').val();
+    currentTab.docTypeId = $('#nv_tipoDoc').val();
+    currentTab.currencyId = $('#nv_moneda').val();
+    
+    // Guardar Cliente
+    currentTab.clientId = $('#nv_idCliente').val();
+    currentTab.clientName = $('#nv_buscarCliente').val();
+    
+    // Guardar Productos
+    currentTab.products = [];
+    $('#nv_tablaProductos tr').each(function() {
+        const row = $(this);
+        const prodId = row.data('id');
+        const code = row.find('td:eq(0) div').text();
+        const name = row.find('td:eq(0) small').text();
+        const unit = row.find('td:eq(1)').text();
+        const stock = row.find('td:eq(2)').text(); 
+        const qty = row.find('.qty').val();
+        const val = row.find('.val').val();
+        
+        currentTab.products.push({
+            id: prodId,
+            code: code,
+            name: name,
+            unitOfMeasure: unit,
+            stock: stock,
+            quantity: qty,
+            unitValue: val
+        });
+    });
+}
+
+function loadTabData(tabId) {
+    const tabData = salesTabs.find(t => t.id === tabId);
+    if (!tabData) return;
+    
+    // Restaurar Selects
+    $('#nv_almacen').val(tabData.warehouseId);
+    $('#nv_tipoDoc').val(tabData.docTypeId);
+    $('#nv_moneda').val(tabData.currencyId);
+    
+    // Restaurar Cliente
+    if (tabData.clientId) {
+        $('#nv_idCliente').val(tabData.clientId);
+        $('#nv_buscarCliente').val(tabData.clientName);
+        $('#btnLimpiarCliente').show();
+        $('#listaClientes').hide();
+    } else {
+        $('#nv_idCliente').val('');
+        $('#nv_buscarCliente').val('');
+        $('#btnLimpiarCliente').hide();
+    }
+    
+    // Disparar lógica de número de documento
+    obtenerSiguienteNumero(); 
+
+    // Restaurar Tabla Productos
+    $('#nv_tablaProductos').empty();
+    tabData.products.forEach(p => {
+        const mockProd = {
+            id: p.id,
+            code: p.code,
+            name: p.name,
+            unitOfMeasure: p.unitOfMeasure,
+            stock: p.stock
+        };
+        restaurarProductoEnTabla(mockProd, p.quantity, p.unitValue);
+    });
+    
+    calcularTotalesGlobales();
+}
+
+function restaurarProductoEnTabla(prod, qtyVal, priceVal) {
+    const rowId = Date.now() + Math.random().toString(16).slice(2);
+    
+    const row = `<tr id="row_${rowId}" data-id="${prod.id}">
+        <td><div style="font-weight:700;color:#333;">${prod.code||''}</div><small style="color:#666;font-size:12px;">${prod.name}</small></td>
+        <td>${prod.unitOfMeasure||'UNI'}</td>
+        <td class="text-center" style="color: #000; font-weight:700;">${prod.stock}</td>
+        
+        <td><div class="input-container"><input type="number" class="input-table qty" value="${qtyVal}" min="0.01" step="any" oninput="calcularFila('${rowId}')"><span class="row-error-msg">Requerido</span></div></td>
+        <td><div class="input-container"><div style="display:flex;align-items:center;width:100%;"><input type="number" class="input-table val" value="${priceVal}" min="0.01" step="any" oninput="calcularFila('${rowId}')"></div><span class="row-error-msg">Requerido</span></div></td>
+        
+        <td class="text-right subtotal">0.00</td><td class="text-right igv">0.00</td><td class="text-right total" style="font-weight:bold;">0.00</td>
+        <td class="text-center"><button class="btn-delete-row" onclick="eliminarFila('${rowId}')"><i class='bx bx-trash'></i></button></td></tr>`;
+        
+    $('#nv_tablaProductos').append(row); 
+    calcularFila(rowId);
+}
+
+// ==========================================
+// FIN LÓGICA DE PESTAÑAS
+// ==========================================
+
 async function abrirModalNuevaVenta() {
     $('#modalNuevaVenta').css('display', 'flex');
 
-    // EJECUTAMOS LIMPIEZA AL ABRIR
-    limpiarFormularioVenta();
+    // Inicializar sistema de pestañas
+    initTabs(); 
 
     const $btn = $('#modalNuevaVenta .btn-save-modal');
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Venta");
     
-    cargarDropdown(EP_WAREHOUSE, 'nv_almacen'); 
-    
-    // Cargar tipos de documento y luego obtener el número para la primera opción
+    await cargarDropdown(EP_WAREHOUSE, 'nv_almacen'); 
     await cargarDropdown(EP_VOUCHER, 'nv_tipoDoc'); 
+    await cargarDropdown(EP_CURRENCY, 'nv_moneda');
+    
+    saveCurrentTabData();
 
     // ==========================================
     // LOGICA PARA DESHABILITAR "NO DOMICILIADO"
     // ==========================================
     $('#nv_tipoDoc option').each(function() {
         if($(this).text().toLowerCase().includes('no domiciliado')) {
-            $(this).prop('disabled', true); // Deshabilitar la opción
+            $(this).prop('disabled', true); 
         }
     });
 
-    // Asegurarse de que no esté seleccionado "No domiciliado" por defecto
-    // Si la opción seleccionada está deshabilitada, seleccionar la primera disponible
     if($('#nv_tipoDoc option:selected').prop('disabled')){
          $('#nv_tipoDoc').val($('#nv_tipoDoc option:not(:disabled):first').val());
+         saveCurrentTabData();
     }
 
-    // Trigger para obtener el número por defecto del primer elemento (válido) cargado
     if($('#nv_tipoDoc').val()) {
         obtenerSiguienteNumero();
     }
-
-    cargarDropdown(EP_CURRENCY, 'nv_moneda');
 }
 
 async function cargarDropdown(u,e){ 
@@ -255,7 +473,6 @@ async function obtenerSiguienteNumero() {
     const tipoDocId = $('#nv_tipoDoc').val();
     const $inputSerie = $('#nv_serieNumero');
     
-    // Limpiar mientras carga
     $inputSerie.val('Cargando...');
     
     if(!tipoDocId) {
@@ -269,7 +486,6 @@ async function obtenerSiguienteNumero() {
         
         if(response.ok) {
             const data = await response.json();
-            // Data esperada: { "serie": "F001", "nextNumber": "00000010", "fullNumber": "F001-00000010" }
             $inputSerie.val(data.fullNumber || `${data.serie}-${data.nextNumber}`);
         } else {
             console.error('Error al obtener serie');
@@ -319,6 +535,8 @@ function seleccionarCliente(id, txt){
     $('#listaClientes').hide(); 
     $('#nv_buscarCliente').removeClass('error'); 
     $('#error_nv_cliente').removeClass('show'); 
+    
+    saveCurrentTabData();
 }
 
 // --------------------------------------------------------------------------------------
@@ -383,18 +601,23 @@ function agregarProductoMultiple(id, element) {
         $(element).removeClass('added');
         toastr.info(`Removido: ${p.name}`);
         calcularTotalesGlobales();
+        saveCurrentTabData(); 
     } else {
         if ((parseFloat(p.stock) || 0) > 0) {
             agregarProductoATabla(p, false); 
             $(element).addClass('added');
             toastr.success(`Agregado: ${p.name}`);
+            saveCurrentTabData(); 
         }
     }
 }
 
 function seleccionarProductoDeLista(id){ 
     const p = searchResults[id]; 
-    if(p && (parseFloat(p.stock) || 0) > 0) agregarProductoATabla(p, true); 
+    if(p && (parseFloat(p.stock) || 0) > 0) {
+        agregarProductoATabla(p, true); 
+        saveCurrentTabData(); 
+    }
 }
 
 function agregarProductoATabla(prod, cerrarLista = true) {
@@ -410,17 +633,16 @@ function agregarProductoATabla(prod, cerrarLista = true) {
 
     const rowId = Date.now();
     
-    // ELIMINADO S/
     const row = `<tr id="row_${rowId}" data-id="${prod.id}">
         <td><div style="font-weight:700;color:#333;">${prod.code||''}</div><small style="color:#666;font-size:12px;">${prod.name}</small></td>
         <td>${prod.unitOfMeasure||'UNI'}</td>
         <td class="text-center" style="color: #000; font-weight:700;">${stock}</td>
         
-        <td><div class="input-container"><input type="number" class="input-table qty" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"><span class="row-error-msg">Requerido</span></div></td>
-        <td><div class="input-container"><div style="display:flex;align-items:center;width:100%;"><input type="number" class="input-table val" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"></div><span class="row-error-msg">Requerido</span></div></td>
+        <td><div class="input-container"><input type="number" class="input-table qty" value="0" min="0.01" step="any" oninput="calcularFila('${rowId}')"><span class="row-error-msg">Requerido</span></div></td>
+        <td><div class="input-container"><div style="display:flex;align-items:center;width:100%;"><input type="number" class="input-table val" value="0" min="0.01" step="any" oninput="calcularFila('${rowId}')"></div><span class="row-error-msg">Requerido</span></div></td>
         
         <td class="text-right subtotal">0.00</td><td class="text-right igv">0.00</td><td class="text-right total" style="font-weight:bold;">0.00</td>
-        <td class="text-center"><button class="btn-delete-row" onclick="eliminarFila(${rowId})"><i class='bx bx-trash'></i></button></td></tr>`;
+        <td class="text-center"><button class="btn-delete-row" onclick="eliminarFila('${rowId}')"><i class='bx bx-trash'></i></button></td></tr>`;
     $('#nv_tablaProductos').append(row); calcularFila(rowId);
 }
 
@@ -433,7 +655,6 @@ function calcularFila(rowId) {
     const subtotal = total / 1.18;
     const igv = total - subtotal;
 
-    // ELIMINADO S/
     $row.find('.subtotal').text(`${formatoMoneda(subtotal)}`); 
     $row.find('.igv').text(`${formatoMoneda(igv)}`); 
     $row.find('.total').text(`${formatoMoneda(total)}`);
@@ -444,19 +665,17 @@ function calcularTotalesGlobales() {
     let globalSubtotal = 0; let globalIGV = 0; let globalTotal = 0;
     $('#nv_tablaProductos tr').each(function() {
         const row = $(this);
-        // ELIMINADO REEMPLAZO DE S/
         const sub = parseFloat(row.find('.subtotal').text().replace(/,/g,'')) || 0;
         const igv = parseFloat(row.find('.igv').text().replace(/,/g,'')) || 0;
         const tot = parseFloat(row.find('.total').text().replace(/,/g,'')) || 0;
         globalSubtotal += sub; globalIGV += igv; globalTotal += tot;
     });
-    // ELIMINADO S/
     $('#nv_txtSubTotal').text(`${formatoMoneda(globalSubtotal)}`); 
     $('#nv_txtIGV').text(`${formatoMoneda(globalIGV)}`); 
     $('#nv_txtNoGravado').text(`0.00`); 
     $('#nv_txtTotal').text(`${formatoMoneda(globalTotal)}`);
 }
-function eliminarFila(id){ $(`#row_${id}`).remove(); calcularTotalesGlobales(); }
+function eliminarFila(id){ $(`#row_${id}`).remove(); calcularTotalesGlobales(); saveCurrentTabData(); }
 
 function guardarVenta() {
     let isValid = true;
@@ -489,7 +708,16 @@ function guardarVenta() {
     fetch(EP_SALE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     .then(async res => {
         let d = null; try{d=await res.json();}catch(e){}
-        if(res.ok){ toastr.success(d?.message||"Venta registrada"); cerrarModal('modalNuevaVenta'); fetchVentas(currentPage); }
+        if(res.ok){ 
+            toastr.success(d?.message||"Venta registrada"); 
+            
+            // CERRAR SOLO LA PESTAÑA ACTUAL AL GUARDAR
+            // Si quedan más pestañas, el modal sigue abierto.
+            // Si era la última, el modal se cierra.
+            closeTab(activeTabId);
+            
+            fetchVentas(currentPage); 
+        }
         else{ 
             if(d?.errors && Array.isArray(d.errors)) { d.errors.forEach(err => toastr.error(err)); } 
             else if (d?.message) { toastr.error(d.message); } 
@@ -678,10 +906,10 @@ function cerrarModal(id){
     // Limpiar al cerrar si es el modal de nueva venta
     if (id === 'modalNuevaVenta') {
         limpiarFormularioVenta();
+        salesTabs = []; // Reset tabs
     }
 }
 
-// ELIMINADO S/
 async function abrirModalDetalle(id) { if(!id) return; $('#modalDetalleVenta').css('display','flex'); $('#modalLoader').show(); $('#modalContentBody').hide(); try { const r = await fetch(`${EP_SALE}/${id}`); const d = await r.json(); $('#mv_tipoDoc').text(d.voucherType||'Venta'); $('#mv_serieNumero').text(d.voucherNumber||'-'); $('#mv_fechaEmision').text(formatearFechaPeru(d.issueDate,false)); $('#mv_cliente').text(d.personName||'-'); const dn=d.personDocumentNumber||''; let dt=d.personDocumentType||(dn.length===11?'RUC':'DNI'); $('#mv_docCliente').text(dn?`${dt}: ${dn}`:'-'); $('#mv_almacen').text(d.warehouse||'-'); $('#mv_moneda').text(d.currency||'-'); $('#mv_fechaRegistro').text(formatearFechaPeru(d.createdDate||d.issueDate,true)); const t=$('#modalTableBody'); t.empty(); if(d.details){ d.details.forEach(i=>{ t.append(`<tr><td><span style="background:#f4f4f4;padding:2px 6px;border-radius:4px;border:1px solid #ddd;font-weight:600">${i.productCode||'-'}</span></td><td><strong>${i.productName||'-'}</strong></td><td>${i.unitOfMeasure||'UNI'}</td><td>${i.igvType||'-'}</td><td class="text-right">${(i.quantity||0).toFixed(2)}</td><td class="text-right">${formatoMoneda(i.unitPrice)}</td><td class="text-right">${formatoMoneda(i.amount)}</td><td class="text-right">${formatoMoneda(i.taxAmount)}</td><td class="text-right"><strong>${formatoMoneda(i.lineTotal)}</strong></td></tr>`); }); } $('#mv_totalNoGravado').text(`${formatoMoneda(d.exempt)}`); $('#mv_totalSubtotal').text(`${formatoMoneda(d.subTotal)}`); $('#mv_totalIgv').text(`${formatoMoneda(d.taxAmount)}`); $('#mv_totalFinal').text(`${formatoMoneda(d.total)}`); $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200); } catch(e) { toastr.error("Error al cargar"); cerrarModal('modalDetalleVenta'); } }
 
 // ===============================================
