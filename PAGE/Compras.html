@@ -120,7 +120,7 @@
 <div id="modalDetalle" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header"><h3><i class='bx bx-detail'></i> Detalles de Compra</h3><span class="close-modal" onclick="cerrarModal('modalDetalle')">&times;</span></div>
-        <div class="modal-body"><div id="modalLoader" class="loader-container"><div class="spinner"></div><p>Cargando detalles...</p></div><div id="modalContentBody" style="display: none;"><div class="info-grid"><div class="info-item"><label>DOCUMENTO</label><div class="doc-badge"><span id="m_tipoDoc" class="badge-dark">-</span><span id="m_serieNumero" class="badge-number-modal">-</span></div></div><div class="info-item"><label>FECHA DE EMISIÓN</label><p id="m_fechaEmision">-</p></div><div class="info-item"><label>PROVEEDOR</label><p id="m_proveedor" class="font-bold">-</p><small id="m_ruc" style="color:#777">-</small></div><div class="info-item"><label>ALMACÉN</label><p id="m_almacen">-</p></div><div class="info-item"><label>MONEDA</label><p id="m_moneda">-</p></div><div class="info-item"><label>FECHA DE REGISTRO</label><p id="m_fechaRegistro">-</p></div></div><hr style="border:0; border-top:1px solid #eee; margin:20px 0;"><h4 style="margin-bottom:15px; font-size:14px; color:#333;"><i class='bx bx-list-ul'></i> Detalle de Productos</h4><div class="table-responsive-modal"><table class="modal-table"><thead><tr><th>CÓDIGO</th><th>PRODUCTO</th><th>UNIDAD</th><th>TIPO IGV</th><th class="text-right">CANTIDAD</th><th class="text-right">VALOR UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th></tr></thead><tbody id="modalTableBody"></tbody></table></div><div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="m_totalNoGravado">S/ 0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="m_totalSubtotal">S/ 0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="m_totalIgv">S/ 0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="m_totalFinal">S/ 0.00</span></div></div></div></div></div>
+        <div class="modal-body"><div id="modalLoader" class="loader-container"><div class="spinner"></div><p>Cargando detalles...</p></div><div id="modalContentBody" style="display: none;"><div class="info-grid"><div class="info-item"><label>DOCUMENTO</label><div class="doc-badge"><span id="m_tipoDoc" class="badge-dark">-</span><span id="m_serieNumero" class="badge-number-modal">-</span></div></div><div class="info-item"><label>FECHA DE EMISIÓN</label><p id="m_fechaEmision">-</p></div><div class="info-item"><label>PROVEEDOR</label><p id="m_proveedor" class="font-bold">-</p><small id="m_ruc" style="color:#777">-</small></div><div class="info-item"><label>ALMACÉN</label><p id="m_almacen">-</p></div><div class="info-item"><label>MONEDA</label><p id="m_moneda">-</p></div><div class="info-item"><label>FECHA DE REGISTRO</label><p id="m_fechaRegistro">-</p></div></div><hr style="border:0; border-top:1px solid #eee; margin:20px 0;"><h4 style="margin-bottom:15px; font-size:14px; color:#333;"><i class='bx bx-list-ul'></i> Detalle de Productos</h4><div class="table-responsive-modal"><table class="modal-table"><thead><tr><th>CÓDIGO</th><th>PRODUCTO</th><th>UNIDAD</th><th>TIPO IGV</th><th class="text-right">CANTIDAD</th><th class="text-right">VALOR UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th></tr></thead><tbody id="modalTableBody"></tbody></table></div><div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="m_totalNoGravado">0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="m_totalSubtotal">0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="m_totalIgv">0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="m_totalFinal">0.00</span></div></div></div></div></div>
         <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalDetalle')">Cerrar</button></div>
     </div>
 </div>
@@ -155,7 +155,7 @@
             <hr class="divider">
             <div class="product-add-section"><div class="autocomplete-wrapper" style="flex-grow: 1;"><input type="text" id="nc_buscarProducto" class="form-control search-product-input" placeholder="📦 Buscar productos para agregar..." autocomplete="off"><div id="listaProductos" class="autocomplete-list"></div></div><button class="btn-create-prod" onclick="abrirModalCrearProducto()">+ Crear Producto</button></div>
             <div class="table-responsive-modal" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"><table class="modal-table"><thead><tr><th>PRODUCTO</th><th>UNIDAD</th><th style="width: 200px;">TIPO IGV</th><th style="width: 80px;">CANT.</th><th style="width: 100px;">VAL. UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th><th></th></tr></thead><tbody id="nc_tablaProductos"></tbody></table></div>
-            <div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="nc_txtNoGravado">S/ 0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="nc_txtSubTotal">S/ 0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="nc_txtIGV">S/ 0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="nc_txtTotal">S/ 0.00</span></div></div></div>
+            <div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="nc_txtNoGravado">0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="nc_txtSubTotal">0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="nc_txtIGV">0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="nc_txtTotal">0.00</span></div></div></div>
         </div>
         <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalNuevaCompra')">Cancelar</button><button class="btn-save-modal" onclick="guardarCompra()"><i class='bx bx-save'></i> Guardar Compra</button></div>
     </div>
@@ -164,8 +164,87 @@
 <div id="modalCrearProducto" class="modal-overlay" style="z-index: 2100;">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header"><h3>Nuevo Producto</h3><span class="close-modal" onclick="cerrarModal('modalCrearProducto')">&times;</span></div>
-        <div class="modal-body"><form id="formNuevoProducto"><div class="form-grid"><div class="form-group full-width"><label>Código *</label><input type="text" id="np_codigo" class="form-control" placeholder="Ej: PROD001"><span class="error-message" id="error_np_codigo">Requerido</span></div><div class="form-group full-width"><label>Nombre *</label><input type="text" id="np_nombre" class="form-control" placeholder="Nombre del producto"><span class="error-message" id="error_np_nombre">Requerido</span></div><div class="form-group full-width"><label>Descripción</label><textarea id="np_descripcion" class="form-control" rows="2" placeholder="Descripción breve"></textarea></div><div class="form-group"><label>Unidad de Medida *</label><select id="np_unidad" class="form-control"></select><span class="error-message" id="error_np_unidad">Requerido</span></div><div class="form-group"><label>Tipo de IGV *</label><select id="np_igv" class="form-control"></select><span class="error-message" id="error_np_igv">Requerido</span></div><div class="form-group full-width"><label>Categoría *</label><select id="np_categoria" class="form-control"></select><span class="error-message" id="error_np_categoria">Requerido</span></div><div class="form-group"><label>Precio de Compra</label><div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number" id="np_precioCompra" class="form-control" value="0"></div></div><div class="form-group"><label>Precio de Venta *</label><div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number" id="np_precioVenta" class="form-control" placeholder="0"></div><span class="error-message" id="error_np_precioVenta">Requerido</span></div></div></form></div>
-        <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalCrearProducto')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevoProducto()">Guardar</button></div>
+        <div class="modal-body">
+            <form id="formNuevoProducto">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Código *</label>
+                        <input type="text" id="np_codigo" class="form-control" placeholder="Ej: PROD001">
+                        <span class="error-message" id="error_np_codigo">Requerido</span>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Nombre *</label>
+                        <input type="text" id="np_nombre" class="form-control" placeholder="Nombre del producto">
+                        <span class="error-message" id="error_np_nombre">Requerido</span>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Descripción</label>
+                        <textarea id="np_descripcion" class="form-control" rows="2" placeholder="Descripción breve"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Unidad de Medida *</label>
+                        <select id="np_unidad" class="form-control"></select>
+                        <span class="error-message" id="error_np_unidad">Requerido</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de IGV *</label>
+                        <select id="np_igv" class="form-control"></select>
+                        <span class="error-message" id="error_np_igv">Requerido</span>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Categoría *</label>
+                        <div class="input-with-button">
+                            <select id="np_categoria" class="form-control"></select>
+                            <button type="button" class="btn-add-inline" onclick="abrirModalNuevaCategoria()" title="Crear nueva categoría">
+                                ➕ Crear Categoría
+                            </button>
+                        </div>
+                        <span class="error-message" id="error_np_categoria">Requerido</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Precio de Compra</label>
+                        <input type="number" id="np_precioCompra" class="form-control" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio de Venta *</label>
+                        <input type="number" id="np_precioVenta" class="form-control" placeholder="0">
+                        <span class="error-message" id="error_np_precioVenta">Requerido</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" onclick="cerrarModal('modalCrearProducto')">Cancelar</button>
+            <button class="btn-save-modal" onclick="guardarNuevoProducto()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalNuevaCategoria" class="modal-overlay" style="z-index: 2300;">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Nueva Categoría</h3>
+            <span class="close-modal" onclick="cerrarModal('modalNuevaCategoria')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formNuevaCategoria">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Nombre *</label>
+                    <input type="text" id="ncat_nombre" class="form-control" placeholder="Ej: Bebidas">
+                    <span class="error-message" id="error_ncat_nombre">Requerido</span>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="ncat_descripcion" class="form-control" placeholder="Opcional"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-close-modal" onclick="cerrarModal('modalNuevaCategoria')">Cancelar</button>
+            <button type="button" class="btn-save-modal" onclick="guardarNuevaCategoria()">Guardar</button>
+        </div>
     </div>
 </div>
 

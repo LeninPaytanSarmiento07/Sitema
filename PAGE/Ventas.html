@@ -207,10 +207,10 @@
 
                 <div class="totals-section">
                     <div class="totals-box">
-                        <div class="total-row"><span>No Gravado:</span><span id="nv_txtNoGravado">S/ 0.00</span></div>
-                        <div class="total-row"><span>SubTotal:</span><span id="nv_txtSubTotal">S/ 0.00</span></div>
-                        <div class="total-row"><span>IGV (18%):</span><span id="nv_txtIGV">S/ 0.00</span></div>
-                        <div class="total-row main-total"><span>Total:</span><span id="nv_txtTotal">S/ 0.00</span></div>
+                        <div class="total-row"><span>No Gravado:</span><span id="nv_txtNoGravado">0.00</span></div>
+                        <div class="total-row"><span>SubTotal:</span><span id="nv_txtSubTotal">0.00</span></div>
+                        <div class="total-row"><span>IGV (18%):</span><span id="nv_txtIGV">0.00</span></div>
+                        <div class="total-row main-total"><span>Total:</span><span id="nv_txtTotal">0.00</span></div>
                     </div>
                 </div>
             </div>
@@ -245,17 +245,24 @@
                         <div class="form-group"><label>Tipo de IGV *</label><select id="np_igv"
                                 class="form-control"></select><span class="error-message"
                                 id="error_np_igv">Requerido</span></div>
-                        <div class="form-group full-width"><label>Categoría *</label><select id="np_categoria"
-                                class="form-control"></select><span class="error-message"
-                                id="error_np_categoria">Requerido</span></div>
+                        
+                        <div class="form-group full-width">
+                            <label>Categoría *</label>
+                            <div class="input-with-button">
+                                <select id="np_categoria" class="form-control"></select>
+                                <button type="button" class="btn-add-inline" onclick="abrirModalNuevaCategoria()" title="Crear nueva categoría">
+                                    ➕ Crear Categoría
+                                </button>
+                            </div>
+                            <span class="error-message" id="error_np_categoria">Requerido</span>
+                        </div>
+
                         <div class="form-group"><label>Precio de Compra</label>
-                            <div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number"
-                                    id="np_precioCompra" class="form-control" value="0"></div>
+                            <input type="number" id="np_precioCompra" class="form-control" value="0">
                         </div>
                         <div class="form-group"><label>Precio de Venta *</label>
-                            <div class="input-with-prefix"><span class="input-prefix">S/</span><input type="number"
-                                    id="np_precioVenta" class="form-control" placeholder="0"></div><span
-                                class="error-message" id="error_np_precioVenta">Requerido</span>
+                            <input type="number" id="np_precioVenta" class="form-control" placeholder="0">
+                            <span class="error-message" id="error_np_precioVenta">Requerido</span>
                         </div>
                     </div>
                 </form>
@@ -263,6 +270,32 @@
             <div class="modal-footer"><button class="btn-close-modal"
                     onclick="cerrarModal('modalCrearProducto')">Cancelar</button><button class="btn-save-modal"
                     onclick="guardarNuevoProducto()">Guardar</button></div>
+        </div>
+    </div>
+
+    <div id="modalNuevaCategoria" class="modal-overlay" style="z-index: 2300;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Nueva Categoría</h3>
+                <span class="close-modal" onclick="cerrarModal('modalNuevaCategoria')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formNuevaCategoria">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Nombre *</label>
+                        <input type="text" id="ncat_nombre" class="form-control" placeholder="Ej: Bebidas">
+                        <span class="error-message" id="error_ncat_nombre">Requerido</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="ncat_descripcion" class="form-control" placeholder="Opcional"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-close-modal" onclick="cerrarModal('modalNuevaCategoria')">Cancelar</button>
+                <button type="button" class="btn-save-modal" onclick="guardarNuevaCategoria()">Guardar</button>
+            </div>
         </div>
     </div>
 
@@ -323,12 +356,12 @@
                     </div>
                     <div class="totals-section">
                         <div class="totals-box">
-                            <div class="total-row"><span>No Gravado:</span><span id="mv_totalNoGravado">S/ 0.00</span>
+                            <div class="total-row"><span>No Gravado:</span><span id="mv_totalNoGravado">0.00</span>
                             </div>
-                            <div class="total-row"><span>SubTotal:</span><span id="mv_totalSubtotal">S/ 0.00</span>
+                            <div class="total-row"><span>SubTotal:</span><span id="mv_totalSubtotal">0.00</span>
                             </div>
-                            <div class="total-row"><span>IGV:</span><span id="mv_totalIgv">S/ 0.00</span></div>
-                            <div class="total-row main-total"><span>Total:</span><span id="mv_totalFinal">S/ 0.00</span>
+                            <div class="total-row"><span>IGV:</span><span id="mv_totalIgv">0.00</span></div>
+                            <div class="total-row main-total"><span>Total:</span><span id="mv_totalFinal">0.00</span>
                             </div>
                         </div>
                     </div>

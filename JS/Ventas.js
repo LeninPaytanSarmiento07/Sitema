@@ -155,7 +155,9 @@ async function fetchVentas(page) {
             const dn = v.personDocumentNumber || '';
             const dl = v.personDocumentType || (dn.length === 11 ? "RUC" : "DNI");
             const tot = formatoMoneda(v.total);
-            $tbody.append(`<tr><td>${f}</td><td style="color:#6b7280">${v.warehouse||'-'}</td><td><span style="background:#1f2937;color:white;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">${v.voucherType||'Doc'}</span></td><td><span style="background:#eff6ff;color:#3b82f6;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:600;border:1px solid #dbeafe">${sn}</span></td><td><div style="font-weight:600;color:#111827">${v.personName||'Cliente'}</div><div style="font-size:11px;color:#6b7280;margin-top:2px"><strong>${dl}:</strong> ${dn}</div></td><td style="color:#4b5563">${v.currency||'-'}</td><td style="font-weight:700;color:#111827">S/ ${tot}</td><td class="text-center"><button class="btn-action" onclick="abrirModalDetalle('${v.id}')"><i class='bx bx-show'></i></button></td></tr>`);
+            
+            // ELIMINADO S/
+            $tbody.append(`<tr><td>${f}</td><td style="color:#6b7280">${v.warehouse||'-'}</td><td><span style="background:#1f2937;color:white;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">${v.voucherType||'Doc'}</span></td><td><span style="background:#eff6ff;color:#3b82f6;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:600;border:1px solid #dbeafe">${sn}</span></td><td><div style="font-weight:600;color:#111827">${v.personName||'Cliente'}</div><div style="font-size:11px;color:#6b7280;margin-top:2px"><strong>${dl}:</strong> ${dn}</div></td><td style="color:#4b5563">${v.currency||'-'}</td><td style="font-weight:700;color:#111827">${tot}</td><td class="text-center"><button class="btn-action" onclick="abrirModalDetalle('${v.id}')"><i class='bx bx-show'></i></button></td></tr>`);
         });
 
         currentPage = d.pageNumber; totalPages = d.totalPages;
@@ -186,11 +188,11 @@ function limpiarFormularioVenta() {
     // 3. Vaciar Tabla
     $('#nv_tablaProductos').empty();
 
-    // 4. Resetear Totales Visuales
-    $('#nv_txtNoGravado').text('S/ 0.00');
-    $('#nv_txtSubTotal').text('S/ 0.00');
-    $('#nv_txtIGV').text('S/ 0.00');
-    $('#nv_txtTotal').text('S/ 0.00');
+    // 4. Resetear Totales Visuales (ELIMINADO S/)
+    $('#nv_txtNoGravado').text('0.00');
+    $('#nv_txtSubTotal').text('0.00');
+    $('#nv_txtIGV').text('0.00');
+    $('#nv_txtTotal').text('0.00');
 
     // 5. Limpiar Errores
     $('.form-control').removeClass('error');
@@ -408,15 +410,16 @@ function agregarProductoATabla(prod, cerrarLista = true) {
 
     const rowId = Date.now();
     
+    // ELIMINADO S/
     const row = `<tr id="row_${rowId}" data-id="${prod.id}">
         <td><div style="font-weight:700;color:#333;">${prod.code||''}</div><small style="color:#666;font-size:12px;">${prod.name}</small></td>
         <td>${prod.unitOfMeasure||'UNI'}</td>
         <td class="text-center" style="color: #000; font-weight:700;">${stock}</td>
         
         <td><div class="input-container"><input type="number" class="input-table qty" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"><span class="row-error-msg">Requerido</span></div></td>
-        <td><div class="input-container"><div style="display:flex;align-items:center;width:100%;"><span style="font-size:12px;margin-right:4px;">S/</span><input type="number" class="input-table val" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"></div><span class="row-error-msg">Requerido</span></div></td>
+        <td><div class="input-container"><div style="display:flex;align-items:center;width:100%;"><input type="number" class="input-table val" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"></div><span class="row-error-msg">Requerido</span></div></td>
         
-        <td class="text-right subtotal">S/ 0.00</td><td class="text-right igv">S/ 0.00</td><td class="text-right total" style="font-weight:bold;">S/ 0.00</td>
+        <td class="text-right subtotal">0.00</td><td class="text-right igv">0.00</td><td class="text-right total" style="font-weight:bold;">0.00</td>
         <td class="text-center"><button class="btn-delete-row" onclick="eliminarFila(${rowId})"><i class='bx bx-trash'></i></button></td></tr>`;
     $('#nv_tablaProductos').append(row); calcularFila(rowId);
 }
@@ -430,7 +433,10 @@ function calcularFila(rowId) {
     const subtotal = total / 1.18;
     const igv = total - subtotal;
 
-    $row.find('.subtotal').text(`S/ ${formatoMoneda(subtotal)}`); $row.find('.igv').text(`S/ ${formatoMoneda(igv)}`); $row.find('.total').text(`S/ ${formatoMoneda(total)}`);
+    // ELIMINADO S/
+    $row.find('.subtotal').text(`${formatoMoneda(subtotal)}`); 
+    $row.find('.igv').text(`${formatoMoneda(igv)}`); 
+    $row.find('.total').text(`${formatoMoneda(total)}`);
     calcularTotalesGlobales();
 }
 
@@ -438,12 +444,17 @@ function calcularTotalesGlobales() {
     let globalSubtotal = 0; let globalIGV = 0; let globalTotal = 0;
     $('#nv_tablaProductos tr').each(function() {
         const row = $(this);
-        const sub = parseFloat(row.find('.subtotal').text().replace('S/','').replace(/,/g,'')) || 0;
-        const igv = parseFloat(row.find('.igv').text().replace('S/','').replace(/,/g,'')) || 0;
-        const tot = parseFloat(row.find('.total').text().replace('S/','').replace(/,/g,'')) || 0;
+        // ELIMINADO REEMPLAZO DE S/
+        const sub = parseFloat(row.find('.subtotal').text().replace(/,/g,'')) || 0;
+        const igv = parseFloat(row.find('.igv').text().replace(/,/g,'')) || 0;
+        const tot = parseFloat(row.find('.total').text().replace(/,/g,'')) || 0;
         globalSubtotal += sub; globalIGV += igv; globalTotal += tot;
     });
-    $('#nv_txtSubTotal').text(`S/ ${formatoMoneda(globalSubtotal)}`); $('#nv_txtIGV').text(`S/ ${formatoMoneda(globalIGV)}`); $('#nv_txtNoGravado').text(`S/ 0.00`); $('#nv_txtTotal').text(`S/ ${formatoMoneda(globalTotal)}`);
+    // ELIMINADO S/
+    $('#nv_txtSubTotal').text(`${formatoMoneda(globalSubtotal)}`); 
+    $('#nv_txtIGV').text(`${formatoMoneda(globalIGV)}`); 
+    $('#nv_txtNoGravado').text(`0.00`); 
+    $('#nv_txtTotal').text(`${formatoMoneda(globalTotal)}`);
 }
 function eliminarFila(id){ $(`#row_${id}`).remove(); calcularTotalesGlobales(); }
 
@@ -598,6 +609,68 @@ async function abrirModalCrearProducto() { $('#modalCrearProducto').css('display
 async function guardarNuevoProducto() { let v=true; ['np_codigo','np_nombre','np_unidad','np_igv','np_categoria','np_precioVenta'].forEach(i=>{if(!$(`#${i}`).val()){$(`#${i}`).addClass('error');$(`#error_${i}`).addClass('show');v=false;}else{$(`#${i}`).removeClass('error');$(`#error_${i}`).removeClass('show');}}); if(!v){toastr.error("Faltan datos");return;} const p={code:$('#np_codigo').val(),name:$('#np_nombre').val(),description:$('#np_descripcion').val(),unitOfMeasureId:$('#np_unidad').val(),igvTypeId:$('#np_igv').val(),categoryId:$('#np_categoria').val(),purchasePrice:parseFloat($('#np_precioCompra').val())||0,salePrice:parseFloat($('#np_precioVenta').val())||0}; try{const r=await fetch(EP_PRODUCT_CRUD,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){toastr.success("Producto creado");cerrarModal('modalCrearProducto');}else{const e=await r.json();toastr.error(e.message||"Error al crear");}}catch{toastr.error("Error conexión");} }
 
 // ==========================================
+// NUEVA LÓGICA: CREAR CATEGORÍA EN EL MODAL
+// ==========================================
+function abrirModalNuevaCategoria() {
+    // Usamos fadeIn (que usa JQuery) porque así se manejan los otros modales
+    $('#modalNuevaCategoria').fadeIn(200).css('display', 'flex');
+    $('#formNuevaCategoria')[0].reset();
+    $('#ncat_nombre').removeClass('error');
+    $('#error_ncat_nombre').removeClass('show');
+}
+
+async function guardarNuevaCategoria() {
+    const nombreInput = $('#ncat_nombre');
+    const descInput = $('#ncat_descripcion');
+    const errorMsg = $('#error_ncat_nombre');
+    
+    const nombre = nombreInput.val().trim();
+    
+    if (!nombre) {
+        nombreInput.addClass('error');
+        errorMsg.addClass('show');
+        return;
+    } else {
+        nombreInput.removeClass('error');
+        errorMsg.removeClass('show');
+    }
+
+    const payload = {
+        name: nombre,
+        description: descInput.val().trim() || null
+    };
+
+    const $btn = $('#modalNuevaCategoria .btn-save-modal');
+    $btn.prop('disabled', true).text('Guardando...');
+
+    try {
+        const response = await fetch(EP_CATEGORY, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            toastr.success('Categoría creada correctamente');
+            cerrarModal('modalNuevaCategoria');
+            // Recargar el dropdown de categorías del modal de producto
+            await cargarDropdown(EP_CATEGORY, 'np_categoria'); 
+        } else {
+            const errorData = await response.json();
+            let msg = 'Error al crear categoría';
+            if (errorData.errors && Array.isArray(errorData.errors)) msg = errorData.errors[0];
+            else if (errorData.message) msg = errorData.message;
+            toastr.error(msg);
+        }
+    } catch (error) {
+        console.error(error);
+        toastr.error('Error de conexión');
+    } finally {
+        $btn.prop('disabled', false).text('Guardar');
+    }
+}
+
+// ==========================================
 // FUNCIÓN CERRAR MODAL (ACTUALIZADA)
 // ==========================================
 function cerrarModal(id){
@@ -608,7 +681,8 @@ function cerrarModal(id){
     }
 }
 
-async function abrirModalDetalle(id) { if(!id) return; $('#modalDetalleVenta').css('display','flex'); $('#modalLoader').show(); $('#modalContentBody').hide(); try { const r = await fetch(`${EP_SALE}/${id}`); const d = await r.json(); $('#mv_tipoDoc').text(d.voucherType||'Venta'); $('#mv_serieNumero').text(d.voucherNumber||'-'); $('#mv_fechaEmision').text(formatearFechaPeru(d.issueDate,false)); $('#mv_cliente').text(d.personName||'-'); const dn=d.personDocumentNumber||''; let dt=d.personDocumentType||(dn.length===11?'RUC':'DNI'); $('#mv_docCliente').text(dn?`${dt}: ${dn}`:'-'); $('#mv_almacen').text(d.warehouse||'-'); $('#mv_moneda').text(d.currency||'-'); $('#mv_fechaRegistro').text(formatearFechaPeru(d.createdDate||d.issueDate,true)); const t=$('#modalTableBody'); t.empty(); if(d.details){ d.details.forEach(i=>{ t.append(`<tr><td><span style="background:#f4f4f4;padding:2px 6px;border-radius:4px;border:1px solid #ddd;font-weight:600">${i.productCode||'-'}</span></td><td><strong>${i.productName||'-'}</strong></td><td>${i.unitOfMeasure||'UNI'}</td><td>${i.igvType||'-'}</td><td class="text-right">${(i.quantity||0).toFixed(2)}</td><td class="text-right">S/ ${formatoMoneda(i.unitPrice)}</td><td class="text-right">S/ ${formatoMoneda(i.amount)}</td><td class="text-right">S/ ${formatoMoneda(i.taxAmount)}</td><td class="text-right"><strong>S/ ${formatoMoneda(i.lineTotal)}</strong></td></tr>`); }); } $('#mv_totalNoGravado').text(`S/ ${formatoMoneda(d.exempt)}`); $('#mv_totalSubtotal').text(`S/ ${formatoMoneda(d.subTotal)}`); $('#mv_totalIgv').text(`S/ ${formatoMoneda(d.taxAmount)}`); $('#mv_totalFinal').text(`S/ ${formatoMoneda(d.total)}`); $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200); } catch(e) { toastr.error("Error al cargar"); cerrarModal('modalDetalleVenta'); } }
+// ELIMINADO S/
+async function abrirModalDetalle(id) { if(!id) return; $('#modalDetalleVenta').css('display','flex'); $('#modalLoader').show(); $('#modalContentBody').hide(); try { const r = await fetch(`${EP_SALE}/${id}`); const d = await r.json(); $('#mv_tipoDoc').text(d.voucherType||'Venta'); $('#mv_serieNumero').text(d.voucherNumber||'-'); $('#mv_fechaEmision').text(formatearFechaPeru(d.issueDate,false)); $('#mv_cliente').text(d.personName||'-'); const dn=d.personDocumentNumber||''; let dt=d.personDocumentType||(dn.length===11?'RUC':'DNI'); $('#mv_docCliente').text(dn?`${dt}: ${dn}`:'-'); $('#mv_almacen').text(d.warehouse||'-'); $('#mv_moneda').text(d.currency||'-'); $('#mv_fechaRegistro').text(formatearFechaPeru(d.createdDate||d.issueDate,true)); const t=$('#modalTableBody'); t.empty(); if(d.details){ d.details.forEach(i=>{ t.append(`<tr><td><span style="background:#f4f4f4;padding:2px 6px;border-radius:4px;border:1px solid #ddd;font-weight:600">${i.productCode||'-'}</span></td><td><strong>${i.productName||'-'}</strong></td><td>${i.unitOfMeasure||'UNI'}</td><td>${i.igvType||'-'}</td><td class="text-right">${(i.quantity||0).toFixed(2)}</td><td class="text-right">${formatoMoneda(i.unitPrice)}</td><td class="text-right">${formatoMoneda(i.amount)}</td><td class="text-right">${formatoMoneda(i.taxAmount)}</td><td class="text-right"><strong>${formatoMoneda(i.lineTotal)}</strong></td></tr>`); }); } $('#mv_totalNoGravado').text(`${formatoMoneda(d.exempt)}`); $('#mv_totalSubtotal').text(`${formatoMoneda(d.subTotal)}`); $('#mv_totalIgv').text(`${formatoMoneda(d.taxAmount)}`); $('#mv_totalFinal').text(`${formatoMoneda(d.total)}`); $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200); } catch(e) { toastr.error("Error al cargar"); cerrarModal('modalDetalleVenta'); } }
 
 // ===============================================
 // GESTIÓN DE CLICS FUERA DE MODAL (BLOQUEO)
@@ -616,7 +690,7 @@ async function abrirModalDetalle(id) { if(!id) return; $('#modalDetalleVenta').c
 $(window).click(e => {
     if ($(e.target).hasClass('modal-overlay')) {
         // IDs de los modales que NO deben cerrarse al hacer clic fuera
-        const modalesBloqueados = ['modalNuevaVenta', 'modalCrearCliente', 'modalCrearProducto'];
+        const modalesBloqueados = ['modalNuevaVenta', 'modalCrearCliente', 'modalCrearProducto', 'modalNuevaCategoria'];
         const idActual = $(e.target).attr('id');
 
         // Si el ID del modal clickeado está en la lista de bloqueados, no hacer nada (no cerrar)

@@ -201,6 +201,7 @@ async function fetchCompras(page) {
             const serieNumero = compra.voucherNumber || '-';
             const totalFmt = formatoMoneda(compra.total);
 
+            // SE ELIMINÓ S/
             const row = `<tr>
                 <td style="font-weight: 500;">${fecha}</td>
                 <td style="color: #6b7280;">${compra.warehouse || '-'}</td>
@@ -208,7 +209,7 @@ async function fetchCompras(page) {
                 <td><span style="background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid #dbeafe;">${serieNumero}</span></td>
                 <td><div style="font-weight: 600; color: #111827;">${compra.personName || 'Sin Nombre'}</div><div style="font-size: 11px; color: #6b7280; margin-top:2px;"><strong>${docLabel}:</strong> ${docNum}</div></td>
                 <td style="color: #4b5563;">${compra.currency || '-'}</td>
-                <td style="font-weight: 700; color: #111827;">S/ ${totalFmt}</td>
+                <td style="font-weight: 700; color: #111827;">${totalFmt}</td>
                 <td class="text-center"><button class="btn-action" onclick="abrirModalDetalle('${compra.id}')"><i class='bx bx-show'></i></button></td>
             </tr>`;
             $tbody.append(row);
@@ -436,16 +437,17 @@ function agregarProductoATabla(prod, cerrarLista = true) {
         optionsHtml += `<option value="${igv.id}" ${selected}>${igv.description}</option>`;
     });
 
+    // SE ELIMINÓ S/
     const row = `
         <tr id="row_${rowId}" data-id="${prod.id}">
             <td><div style="font-weight:700; color:#333;">${codigo}</div><small style="color:#666; font-size:12px;">${nombre}</small></td>
             <td>${unidad}</td>
             <td><select class="form-control igv-select" style="font-size:12px; padding:5px;" onchange="calcularFila(${rowId})">${optionsHtml}</select></td>
             <td><div class="input-container"><input type="number" class="input-table qty" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"><span class="row-error-msg">Requerido</span></div></td>
-            <td><div class="input-container"><div style="display:flex; align-items:center; width:100%;"><span style="font-size:12px; margin-right:4px;">S/</span><input type="number" class="input-table val" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"></div><span class="row-error-msg">Requerido</span></div></td>
-            <td class="text-right subtotal">S/ 0.00</td>
-            <td class="text-right igv">S/ 0.00</td>
-            <td class="text-right total" style="font-weight:bold;">S/ 0.00</td>
+            <td><div class="input-container"><div style="display:flex; align-items:center; width:100%;"><input type="number" class="input-table val" value="0" min="0.01" step="any" oninput="calcularFila(${rowId})"></div><span class="row-error-msg">Requerido</span></div></td>
+            <td class="text-right subtotal">0.00</td>
+            <td class="text-right igv">0.00</td>
+            <td class="text-right total" style="font-weight:bold;">0.00</td>
             <td class="text-center"><button class="btn-delete-row" onclick="eliminarFila(${rowId})"><i class='bx bx-trash'></i></button></td>
         </tr>`;
     $('#nc_tablaProductos').append(row);
@@ -465,9 +467,10 @@ function calcularFila(rowId) {
     if (igvText.includes('gravado')) { igv = subtotal * 0.18; }
 
     const total = subtotal + igv;
-    $row.find('.subtotal').text(`S/ ${formatoMoneda(subtotal)}`);
-    $row.find('.igv').text(`S/ ${formatoMoneda(igv)}`);
-    $row.find('.total').text(`S/ ${formatoMoneda(total)}`);
+    // SE ELIMINÓ S/
+    $row.find('.subtotal').text(`${formatoMoneda(subtotal)}`);
+    $row.find('.igv').text(`${formatoMoneda(igv)}`);
+    $row.find('.total').text(`${formatoMoneda(total)}`);
     calcularTotalesGlobales();
 }
 
@@ -485,10 +488,11 @@ function calcularTotalesGlobales() {
         globalIGV += igv;
     });
     const globalTotal = subTotalGravado + noGravado + globalIGV;
-    $('#nc_txtSubTotal').text(`S/ ${formatoMoneda(subTotalGravado)}`);
-    $('#nc_txtIGV').text(`S/ ${formatoMoneda(globalIGV)}`);
-    $('#nc_txtNoGravado').text(`S/ ${formatoMoneda(noGravado)}`);
-    $('#nc_txtTotal').text(`S/ ${formatoMoneda(globalTotal)}`);
+    // SE ELIMINÓ S/
+    $('#nc_txtSubTotal').text(`${formatoMoneda(subTotalGravado)}`);
+    $('#nc_txtIGV').text(`${formatoMoneda(globalIGV)}`);
+    $('#nc_txtNoGravado').text(`${formatoMoneda(noGravado)}`);
+    $('#nc_txtTotal').text(`${formatoMoneda(globalTotal)}`);
 }
 
 function eliminarFila(rowId) { 
@@ -698,6 +702,69 @@ async function guardarNuevoProveedor() {
 }
 
 // ==========================================
+// NUEVA LÓGICA: CREAR CATEGORÍA EN EL MODAL
+// ==========================================
+function abrirModalNuevaCategoria() {
+    // Usamos fadeIn (que usa JQuery) porque así se manejan los otros modales en Compras.js
+    $('#modalNuevaCategoria').fadeIn(200).css('display', 'flex');
+    $('#formNuevaCategoria')[0].reset();
+    $('#ncat_nombre').removeClass('error');
+    $('#error_ncat_nombre').removeClass('show');
+}
+
+async function guardarNuevaCategoria() {
+    const nombreInput = $('#ncat_nombre');
+    const descInput = $('#ncat_descripcion');
+    const errorMsg = $('#error_ncat_nombre');
+    
+    const nombre = nombreInput.val().trim();
+    
+    if (!nombre) {
+        nombreInput.addClass('error');
+        errorMsg.addClass('show');
+        return;
+    } else {
+        nombreInput.removeClass('error');
+        errorMsg.removeClass('show');
+    }
+
+    const payload = {
+        name: nombre,
+        description: descInput.val().trim() || null
+    };
+
+    const $btn = $('#modalNuevaCategoria .btn-save-modal');
+    $btn.prop('disabled', true).text('Guardando...');
+
+    try {
+        const response = await fetch(EP_CATEGORY, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            toastr.success('Categoría creada correctamente');
+            cerrarModal('modalNuevaCategoria');
+            // Recargar el dropdown de categorías del modal de producto
+            await cargarDropdown(EP_CATEGORY, 'np_categoria'); 
+        } else {
+            const errorData = await response.json();
+            let msg = 'Error al crear categoría';
+            if (errorData.errors && Array.isArray(errorData.errors)) msg = errorData.errors[0];
+            else if (errorData.message) msg = errorData.message;
+            toastr.error(msg);
+        }
+    } catch (error) {
+        console.error(error);
+        toastr.error('Error de conexión');
+    } finally {
+        $btn.prop('disabled', false).text('Guardar');
+    }
+}
+
+
+// ==========================================
 // FUNCIÓN CERRAR MODAL (MODIFICADA)
 // ==========================================
 function cerrarModal(id){
@@ -738,23 +805,25 @@ async function abrirModalDetalle(purchaseId) {
                 const igv = d.taxAmount !== undefined ? d.taxAmount : 0;
                 const tot = d.lineTotal !== undefined ? d.lineTotal : 0;
 
+                // SE ELIMINÓ S/
                 $tb.append(`<tr>
                     <td><span style="background:#f4f4f4; padding:2px 6px; border-radius:4px; border:1px solid #ddd; font-weight:600;">${codigoReal}</span></td>
                     <td><strong>${nombreProd}</strong></td>
                     <td>${unidad}</td>
                     <td>${tipoIgv}</td>
                     <td class="text-right">${cant.toFixed(2)}</td>
-                    <td class="text-right">S/ ${formatoMoneda(unitVal)}</td>
-                    <td class="text-right">S/ ${formatoMoneda(sub)}</td>
-                    <td class="text-right">S/ ${formatoMoneda(igv)}</td>
-                    <td class="text-right"><strong>S/ ${formatoMoneda(tot)}</strong></td>
+                    <td class="text-right">${formatoMoneda(unitVal)}</td>
+                    <td class="text-right">${formatoMoneda(sub)}</td>
+                    <td class="text-right">${formatoMoneda(igv)}</td>
+                    <td class="text-right"><strong>${formatoMoneda(tot)}</strong></td>
                 </tr>`);
             });
         }
-        $('#m_totalNoGravado').text(`S/ ${formatoMoneda(item.exempt)}`);
-        $('#m_totalSubtotal').text(`S/ ${formatoMoneda(item.subTotal)}`);
-        $('#m_totalIgv').text(`S/ ${formatoMoneda(item.taxAmount)}`);
-        $('#m_totalFinal').text(`S/ ${formatoMoneda(item.total)}`);
+        // SE ELIMINÓ S/
+        $('#m_totalNoGravado').text(`${formatoMoneda(item.exempt)}`);
+        $('#m_totalSubtotal').text(`${formatoMoneda(item.subTotal)}`);
+        $('#m_totalIgv').text(`${formatoMoneda(item.taxAmount)}`);
+        $('#m_totalFinal').text(`${formatoMoneda(item.total)}`);
 
         $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200);
     } catch(e){ cerrarModal('modalDetalle'); }
@@ -766,7 +835,7 @@ $(window).click(function(e) {
     if ($(e.target).hasClass('modal-overlay')) {
         const id = $(e.target).attr('id');
         // Lista de modales que NO deben cerrarse al hacer clic fuera
-        const modalesBloqueados = ['modalNuevaCompra', 'modalCrearProducto', 'modalCrearProveedor'];
+        const modalesBloqueados = ['modalNuevaCompra', 'modalCrearProducto', 'modalCrearProveedor', 'modalNuevaCategoria'];
         
         if(modalesBloqueados.includes(id)) {
             return; // No hacer nada, evitar el cierre
