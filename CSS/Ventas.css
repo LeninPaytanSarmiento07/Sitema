@@ -95,7 +95,6 @@ a { text-decoration: none; }
 .clear-autocomplete:hover { color: #dc3545; }
 .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; max-height: 250px; overflow-y: auto; z-index: 1000; border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
 
-/* Estilo base modificado para soportar flex en productos y clientes */
 .autocomplete-item { 
     display: flex !important; 
     align-items: center;
@@ -127,7 +126,6 @@ a { text-decoration: none; }
 .btn-create-prod { padding: 0 15px; background: white; border: 1px solid #333; color: #333; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; }
 .btn-create-prod:hover { background: #f0f0f0; }
 
-/* ESTILOS INPUT + BOTÓN TEXTO (AGREGADO) */
 .input-with-button {
     display: flex;
     gap: 8px;
@@ -177,13 +175,10 @@ a { text-decoration: none; }
 #toast-container { z-index: 99999 !important; }
 .toast-bottom-right { bottom: 20px; right: 20px; }
 
-/* =========================================
-   ESTILOS NUEVOS BUSCADOR (PRODUCTOS Y CLIENTES)
-   ========================================= */
-/* Rectángulo Selector (Checkbox) */
+/* ESTILOS NUEVOS BUSCADOR */
 .item-selector {
     width: 45px;
-    align-self: stretch; /* Ocupa todo el alto */
+    align-self: stretch; 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -205,7 +200,6 @@ a { text-decoration: none; }
     justify-content: center;
     background: white;
 }
-/* Efecto visual al agregar */
 .item-selector.added .selector-square {
     background-color: #333;
     border-color: #333;
@@ -216,8 +210,6 @@ a { text-decoration: none; }
     font-size: 12px;
     font-weight: bold;
 }
-
-/* Área de información del producto / cliente */
 .item-info-clickable {
     flex-grow: 1;
     padding: 8px 12px;
@@ -226,16 +218,14 @@ a { text-decoration: none; }
     flex-direction: column;
     justify-content: center;
 }
-
-/* ESTADOS DESHABILITADOS (SIN STOCK) */
 .autocomplete-item.disabled-item {
-    background-color: #fff8f8; /* Fondo rojizo suave */
+    background-color: #fff8f8;
     opacity: 0.8;
 }
 .autocomplete-item.disabled-item .item-selector {
     cursor: not-allowed;
     background-color: #fceaea;
-    pointer-events: none; /* Evita clicks */
+    pointer-events: none;
 }
 .autocomplete-item.disabled-item .selector-square {
     border-color: #d1d5db;
@@ -243,13 +233,13 @@ a { text-decoration: none; }
 }
 .autocomplete-item.disabled-item .item-info-clickable {
     cursor: not-allowed;
-    pointer-events: none; /* Evita clicks */
+    pointer-events: none;
 }
 
-/* FILTROS FECHA (NUEVO) */
+/* FILTROS FECHA */
 .filter-group { display: flex; flex-direction: column; }
 .filter-group label { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 5px; margin-left: 2px; }
-.filters-wrapper { align-items: flex-end; } /* Adjust alignment */
+.filters-wrapper { align-items: flex-end; }
 .date-container { display: flex; align-items: center; gap: 5px; }
 .date-select { padding: 9px 15px; border: 2px solid #eee; border-radius: 6px; background-color: white; outline: none; cursor: pointer; color: #555; transition: border-color 0.3s; font-family: inherit; }
 .date-select:focus { border-color: #3d4f5d; }
@@ -257,10 +247,9 @@ a { text-decoration: none; }
 .btn-clear-date:hover { transform: scale(1.2); }
 
 /* =========================================
-   NUEVO: ESTILOS PARA PESTAÑAS (DUPLICAR VENTA)
+   NUEVO: ESTILOS PARA PESTAÑAS
    ========================================= */
 
-/* Botón de duplicar en el header */
 .btn-duplicate {
     padding: 8px 15px;
     background-color: #fff;
@@ -280,7 +269,6 @@ a { text-decoration: none; }
     border-color: #bbb;
 }
 
-/* Barra de pestañas */
 .tabs-bar {
     display: flex;
     background-color: #e0e0e0;
@@ -288,11 +276,11 @@ a { text-decoration: none; }
     padding: 5px 15px 0 15px;
     gap: 2px;
     overflow-x: auto;
+    align-items: flex-end; /* Alinea los items abajo */
 }
 
-/* Item de pestaña */
 .tab-item {
-    background-color: #e0e0e0; /* Inactivo */
+    background-color: #e0e0e0;
     padding: 10px 15px;
     border-radius: 4px 4px 0 0;
     cursor: pointer;
@@ -313,7 +301,6 @@ a { text-decoration: none; }
     background-color: #d6d6d6;
 }
 
-/* Pestaña activa */
 .tab-item.active {
     background-color: #fff;
     color: #000;
@@ -321,7 +308,6 @@ a { text-decoration: none; }
     border-color: #ccc;
 }
 
-/* Botón cerrar pestaña */
 .tab-close {
     font-size: 14px;
     color: #cc0000;
@@ -338,4 +324,28 @@ a { text-decoration: none; }
 .tab-close:hover {
     background-color: #ffcccc;
     color: #990000;
+}
+
+/* =======================================================
+   ESTILO NUEVO BOTÓN + (TIPO NAVEGADOR)
+   ======================================================= */
+.tab-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px; 
+    background-color: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 2px;
+    margin-bottom: 2px;
+    font-size: 20px;
+    color: #555;
+    transition: 0.2s;
+}
+
+.tab-add-btn:hover {
+    background-color: #d6d6d6;
+    color: #000;
 }

@@ -30,7 +30,7 @@ let searchResults = {};
 let searchTimer = null; 
 
 // ==========================================
-// VARIABLES GESTIÓN DE PESTAÑAS (NUEVO)
+// VARIABLES GESTIÓN DE PESTAÑAS
 // ==========================================
 let salesTabs = [];       // Array para guardar el estado de cada venta
 let activeTabId = null;   // ID de la pestaña actual
@@ -288,6 +288,17 @@ function renderTabs() {
             </div>
         `);
     });
+
+    // ==========================================================
+    // NUEVO BOTÓN AGREGAR PESTAÑA (+)
+    // ==========================================================
+    if (salesTabs.length < 5) {
+        $container.append(`
+            <div class="tab-add-btn" onclick="createTab(false)" title="Nueva Pestaña Vacía">
+                <i class='bx bx-plus'></i>
+            </div>
+        `);
+    }
 }
 
 function switchTab(tabId) {
@@ -361,6 +372,12 @@ function saveCurrentTabData() {
 function loadTabData(tabId) {
     const tabData = salesTabs.find(t => t.id === tabId);
     if (!tabData) return;
+
+    // ==============================================================
+    // FIX: RESTAURAR BOTÓN GUARDAR (QUITAR ESTADO "GUARDANDO...")
+    // ==============================================================
+    const $btn = $('#modalNuevaVenta .btn-save-modal');
+    $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Venta");
     
     // Restaurar Selects
     $('#nv_almacen').val(tabData.warehouseId);
