@@ -42,6 +42,9 @@ $(document).ready(function() {
     loadWarehouses();
     prepararOpcionesIGV();
 
+    // APLICAR CAMBIO SOLICITADO: MÁXIMO 25 DÍGITOS EN MODAL CREAR CLIENTE (VENTAS)
+    $('#ncli_numeroDoc').attr('maxlength', '25');
+
     $('#btnPrev').click(() => cambiarPagina(-1));
     $('#btnNext').click(() => cambiarPagina(1));
     $('#btnFirst').click(() => irAPagina(1));

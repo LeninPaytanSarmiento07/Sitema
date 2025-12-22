@@ -2,6 +2,9 @@ const API_BASE = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurew
 
 // ENDPOINTS
 const EP_PURCHASE = `${API_BASE}/Purchase`;
+// Nuevo endpoint para No Domiciliados
+const EP_PURCHASE_NON_DOMICILED = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api/Purchase/non-domiciled";
+
 const EP_WAREHOUSE = `${API_BASE}/Warehouse/select`; 
 const EP_VOUCHER = `${API_BASE}/VoucherType/select`; 
 const EP_CURRENCY = `${API_BASE}/Currency/select`;   
@@ -34,6 +37,9 @@ toastr.options = {
 
 $(document).ready(function() {
     loadWarehouses();
+
+    // APLICAR CAMBIO SOLICITADO: MÁXIMO 25 DÍGITOS EN MODAL CREAR PROVEEDOR
+    $('#nprov_numeroDoc').attr('maxlength', '25');
 
     $('#btnPrev').click(() => cambiarPagina(-1));
     $('#btnNext').click(() => cambiarPagina(1));
@@ -287,7 +293,15 @@ async function abrirModalNuevaCompra() {
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Compra");
 
     cargarDropdown(EP_WAREHOUSE, 'nc_almacen');
-    cargarDropdown(EP_VOUCHER, 'nc_tipoDoc');
+    
+    // Cargar y luego Deshabilitar Boleta
+    await cargarDropdown(EP_VOUCHER, 'nc_tipoDoc');
+    $('#nc_tipoDoc option').each(function() {
+        if($(this).text().toLowerCase().includes('boleta')) {
+            $(this).prop('disabled', true);
+        }
+    });
+
     cargarDropdown(EP_CURRENCY, 'nc_moneda');
     await prepararOpcionesIGV();
 }
@@ -563,7 +577,13 @@ function guardarCompra() {
         serie: payloadSerie, number: numero, issueDate: $('#nc_fecha').val(), details: detalles
     };
 
-    fetch(EP_PURCHASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevaCompra) })
+    // Determinar la URL a usar según el tipo de documento
+    let urlToUse = EP_PURCHASE;
+    if (isNoDomiciliado) {
+        urlToUse = EP_PURCHASE_NON_DOMICILED;
+    }
+
+    fetch(urlToUse, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevaCompra) })
     .then(async res => {
         let data = null;
         try { data = await res.json(); } catch(e) {}

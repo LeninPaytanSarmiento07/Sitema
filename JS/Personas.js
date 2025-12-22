@@ -34,6 +34,11 @@ const btnGuardar = document.getElementById('btnGuardar');
 const selectTipoDoc = document.getElementById('tipoDocumento');
 const inputNumDoc = document.getElementById('numeroDocumento');
 
+// APLICAR CAMBIO SOLICITADO: MÁXIMO 25 DÍGITOS
+if (inputNumDoc) {
+    inputNumDoc.setAttribute('maxlength', '25');
+}
+
 // CONFIGURACIÓN TOASTR (Igual que Ventas/Compras)
 toastr.options = { 
     "closeButton": true, 
