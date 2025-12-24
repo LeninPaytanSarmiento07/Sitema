@@ -142,7 +142,7 @@ function renderizarTabla(items) {
 }
 
 // ==========================================
-// VALIDACIONES
+// VALIDACIONES (MODIFICADA)
 // ==========================================
 function validarReglasDocumento() {
     const select = document.getElementById('tipoDocumento');
@@ -164,25 +164,29 @@ function validarReglasDocumento() {
         return false;
     }
 
-    if (!/^\d+$/.test(valor)) {
-        input.classList.add('error');
-        errorSpan.textContent = 'Solo números';
-        errorSpan.classList.add('show');
-        return false;
-    }
+    // APLICAR REGLAS ESTRICTAS SOLO PARA DNI Y RUC
+    if (tipoNombre.includes('DNI') || tipoNombre.includes('RUC')) {
+        if (!/^\d+$/.test(valor)) {
+            input.classList.add('error');
+            errorSpan.textContent = 'Solo números';
+            errorSpan.classList.add('show');
+            return false;
+        }
 
-    if (tipoNombre.includes('DNI') && valor.length !== 8) {
-        input.classList.add('error');
-        errorSpan.textContent = `Debe tener 8 dígitos`;
-        errorSpan.classList.add('show');
-        return false;
-    } 
-    else if (tipoNombre.includes('RUC') && valor.length !== 11) {
-        input.classList.add('error');
-        errorSpan.textContent = `Debe tener 11 dígitos`;
-        errorSpan.classList.add('show');
-        return false;
+        if (tipoNombre.includes('DNI') && valor.length !== 8) {
+            input.classList.add('error');
+            errorSpan.textContent = `Debe tener 8 dígitos`;
+            errorSpan.classList.add('show');
+            return false;
+        } 
+        else if (tipoNombre.includes('RUC') && valor.length !== 11) {
+            input.classList.add('error');
+            errorSpan.textContent = `Debe tener 11 dígitos`;
+            errorSpan.classList.add('show');
+            return false;
+        }
     }
+    // Si es "Documento Tributario" u otro, pasa la validación (el maxlength 25 lo limita el input)
 
     return true;
 }
@@ -196,7 +200,14 @@ selectTipoDoc.addEventListener('change', () => {
 });
 
 inputNumDoc.addEventListener('input', (e) => {
-    e.target.value = e.target.value.replace(/\D/g, '');
+    // CAMBIO: Obtener tipo para decidir si limpiar caracteres no numéricos
+    const selectedOption = selectTipoDoc.options[selectTipoDoc.selectedIndex];
+    const tipoNombre = selectedOption ? (selectedOption.getAttribute('data-name') || '') : '';
+
+    if (tipoNombre.includes('DNI') || tipoNombre.includes('RUC')) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    }
+    
     validarReglasDocumento();
 });
 

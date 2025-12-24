@@ -78,8 +78,20 @@ $(document).ready(function() {
 
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
 
+    // =========================================================================
+    // LÓGICA CORREGIDA PARA INPUT DE N° DOCUMENTO (PROVEEDOR)
+    // =========================================================================
     $('#nprov_numeroDoc').on('input', function(e) {
-        e.target.value = e.target.value.replace(/\D/g, ''); 
+        // Obtenemos el texto del tipo seleccionado
+        const tipoDocText = $('#nprov_tipoDoc option:selected').text().toUpperCase();
+        
+        // Solo forzamos "Solo Números" si es DNI o RUC
+        // Para "Documento tributario" u otros, permitimos caracteres (letras/números)
+        if (tipoDocText.includes('DNI') || tipoDocText.includes('RUC')) {
+            e.target.value = e.target.value.replace(/\D/g, ''); 
+        }
+        
+        // La validación de longitud se maneja abajo y con el maxlength=25
         validarReglasDocumento();
     });
     
@@ -203,7 +215,11 @@ async function fetchCompras(page) {
         items.forEach((compra) => {
             const fecha = formatearFechaPeru(compra.issueDate, false);
             const docNum = compra.personDocumentNumber || '';
-            let docLabel = compra.personDocumentType || (docNum.length === 11 ? "RUC" : "DNI");
+            
+            // --- CAMBIO SOLICITADO: Usar directamente "documentType" del JSON de la API ---
+            let docLabel = compra.documentType || compra.personDocumentType || 'DOC';
+            // -----------------------------------------------------------------------------------
+
             const serieNumero = compra.voucherNumber || '-';
             const totalFmt = formatoMoneda(compra.total);
 
@@ -306,11 +322,25 @@ async function abrirModalNuevaCompra() {
     await prepararOpcionesIGV();
 }
 
+// --- CAMBIO SOLICITADO: INICIALIZAR EN BLANCO ---
 async function cargarDropdown(url, elementId) {
-    try { const res = await fetch(url); const data = await res.json(); const $el = $(`#${elementId}`); $el.empty();
-        data.forEach(item => { let val = item.id; let txt = item.description || item.name || item.text || item.symbol || "Sin Nombre"; $el.append(`<option value="${val}">${txt}</option>`); });
+    try { 
+        const res = await fetch(url); 
+        const data = await res.json(); 
+        const $el = $(`#${elementId}`); 
+        $el.empty();
+        
+        // Agregar opción por defecto para que aparezca "Seleccionar..." al inicio
+        $el.append('<option value="">Seleccionar...</option>');
+
+        data.forEach(item => { 
+            let val = item.id; 
+            let txt = item.description || item.name || item.text || item.symbol || "Sin Nombre"; 
+            $el.append(`<option value="${val}">${txt}</option>`); 
+        });
     } catch (e) { console.error(e); }
 }
+// ------------------------------------------------
 
 async function prepararOpcionesIGV() {
     try { const res = await fetch(EP_IGV); const data = await res.json();
@@ -664,6 +694,7 @@ function validarReglasDocumento() {
         errorSpan.classList.add('show');
         return false;
     }
+    // Si es Documento tributario, el maxlength 25 del input limita, aquí retornamos true si no está vacío
     return true;
 }
 

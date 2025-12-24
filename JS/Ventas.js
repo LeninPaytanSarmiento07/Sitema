@@ -115,8 +115,20 @@ $(document).ready(function() {
 
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
 
+    // =========================================================================
+    // LÓGICA CORREGIDA PARA INPUT DE N° DOCUMENTO (CLIENTE)
+    // =========================================================================
     $('#ncli_numeroDoc').on('input', function(e) {
-        e.target.value = e.target.value.replace(/\D/g, ''); 
+        // Obtenemos el tipo seleccionado (usando el atributo data-name que seteamos al cargar)
+        const selectedOption = $('#ncli_tipoDoc option:selected');
+        const tipoName = (selectedOption.data('name') || selectedOption.text()).toUpperCase();
+
+        // Solo forzamos "Solo Números" si es DNI o RUC
+        // Si es "Documento Tributario", permitimos todo (limitado por maxlength=25)
+        if (tipoName.includes('DNI') || tipoName.includes('RUC')) {
+            e.target.value = e.target.value.replace(/\D/g, ''); 
+        }
+        
         validarReglasDocumento();
     });
     
@@ -795,6 +807,7 @@ function validarReglasDocumento() {
         errorSpan.classList.add('show');
         return false;
     }
+    // Si no es ni DNI ni RUC (ej. Documento Tributario), es válido siempre que no esté vacío (validado por el maxlength del input)
     return true;
 }
 
