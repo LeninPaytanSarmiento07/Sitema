@@ -674,6 +674,28 @@ function guardarCompra() {
 
     // === FLUJO DUA ===
     if (isDua) {
+        // VALIDACIÓN DE CAMPOS OBLIGATORIOS DUA (AGREGAR MAS DATOS)
+        let duaValid = true;
+        const duaFieldsRequired = ['dua_fechaPago', 'dua_anio', 'dua_fob', 'dua_flete', 'dua_seguro'];
+
+        duaFieldsRequired.forEach(id => {
+            const val = $(`#${id}`).val();
+            if (!val || val.toString().trim() === '') {
+                $(`#${id}`).addClass('error');
+                duaValid = false;
+            } else {
+                $(`#${id}`).removeClass('error');
+            }
+        });
+
+        if (!duaValid) {
+            toastr.error("Para DUA/DAM, los campos de 'Agregar más datos' (Fecha, Año, FOB, Flete, Seguro) son obligatorios.");
+            // Abrir modal DUA para que el usuario vea los campos requeridos en rojo
+            $('#modalDatosDua').css('display', 'flex');
+            $btn.prop('disabled', false).html(originalText);
+            return;
+        }
+
         const payloadDua = {
             warehouseId: $('#nc_almacen').val(),
             voucherTypeId: $('#nc_tipoDoc').val(),
@@ -704,7 +726,14 @@ function guardarCompra() {
                 cerrarModal('modalNuevaCompra'); 
                 fetchCompras(currentPage); 
             } else { 
-                toastr.error(data?.message || "Error al guardar DUA");
+                // MANEJO DE ERRORES API (ARRAY ERRORS)
+                if (data.errors && Array.isArray(data.errors)) {
+                    data.errors.forEach(err => toastr.error(err));
+                } else if (data.message) {
+                    toastr.error(data.message);
+                } else {
+                    toastr.error("Error al guardar DUA");
+                }
                 $btn.prop('disabled', false).html(originalText);
             }
         }).catch(() => {
