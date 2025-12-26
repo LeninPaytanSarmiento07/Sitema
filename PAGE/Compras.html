@@ -201,14 +201,80 @@
                 </div>
 
                 <div class="form-group"><label>Moneda *</label><select id="nc_moneda" class="form-control"></select><span class="error-message" id="error_nc_moneda">Requerido</span></div>
+                
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button type="button" id="btnNoDomData" class="btn-dua-toggle" style="display: none; width: 100%; justify-content: center;">
+                        <i class='bx bx-plus-circle'></i> Agregar Mas Datos
+                    </button>
+                </div>
+            </div>
 
-                <div id="containerDuaMain" style="display: none; grid-column: span 3; flex-direction: column; gap: 20px; align-items: flex-end; margin-top: 10px;">
-                     
-                     <button type="button" class="btn-dua-toggle" id="btnOpenDuaModal">
-                        <i class='bx bx-plus-circle'></i> Agregar más datos
-                     </button>
+            <hr class="divider">
 
-                     <div class="dua-totals-box">
+            <div id="sectionProductos">
+                <div class="product-add-section"><div class="autocomplete-wrapper" style="flex-grow: 1;"><input type="text" id="nc_buscarProducto" class="form-control search-product-input" placeholder="📦 Buscar productos para agregar..." autocomplete="off"><div id="listaProductos" class="autocomplete-list"></div></div><button class="btn-create-prod" onclick="abrirModalCrearProducto()">+ Crear Producto</button></div>
+                <div class="table-responsive-modal" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"><table class="modal-table"><thead><tr><th>PRODUCTO</th><th>UNIDAD</th><th style="width: 200px;">TIPO IGV</th><th style="width: 80px;">CANT.</th><th style="width: 100px;">VAL. UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th><th></th></tr></thead><tbody id="nc_tablaProductos"></tbody></table></div>
+                <div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="nc_txtNoGravado">0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="nc_txtSubTotal">0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="nc_txtIGV">0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="nc_txtTotal">0.00</span></div></div></div>
+            </div>
+
+            <div id="sectionDatosDua" style="display: none;">
+                <h4 style="margin-bottom: 15px; font-size: 14px; color: #333; text-transform: uppercase; font-weight:700;"><i class='bx bxs-ship'></i> Datos de Importación (DUA/DAM)</h4>
+                
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <div class="form-grid" style="flex: 1; grid-template-columns: repeat(3, 1fr);">
+                        
+                        <div class="form-group">
+                            <label>F. Vencimiento/Pago:</label>
+                            <input type="date" id="dua_fechaPago" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Año DUA:</label>
+                            <select id="dua_anio" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Percepción (%):</label>
+                            <div class="input-with-symbol">
+                                <input type="number" id="dua_percepcion" class="form-control dua-calc" placeholder="0" min="0" step="0.01">
+                                <span class="symbol">%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Valor FOB:</label>
+                            <input type="number" id="dua_fob" class="form-control dua-calc" placeholder="0.000" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label>Flete:</label>
+                            <input type="number" id="dua_flete" class="form-control dua-calc" placeholder="0.000" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label>Seguro:</label>
+                            <input type="number" id="dua_seguro" class="form-control dua-calc" placeholder="0.000" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label>Ad Valorem:</label>
+                            <input type="number" id="dua_advalorem" class="form-control dua-calc" placeholder="0.000" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label>ISC:</label>
+                            <input type="number" id="dua_isc" class="form-control dua-calc" placeholder="0.000" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label>Monto NO Gravado:</label>
+                            <input type="number" id="dua_noGravado" class="form-control dua-calc" placeholder="0.000" step="0.001">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>IPM (2%):</label>
+                            <input type="number" id="dua_ipm" class="form-control" readonly style="background-color: #f3f4f6;">
+                        </div>
+                        <div class="form-group">
+                            <label>IGV (16%):</label>
+                            <input type="number" id="dua_igv" class="form-control" readonly style="background-color: #f3f4f6;">
+                        </div>
+                    </div>
+
+                    <div class="dua-totals-box" style="width: 280px; flex-shrink: 0;">
                         <div class="dua-total-row">
                             <span>SUBTOTAL</span>
                             <input type="text" id="txtDuaSubtotal" readonly value="0.00">
@@ -218,7 +284,7 @@
                             <input type="text" id="txtDuaNoGravado" readonly value="0.00">
                         </div>
                         <div class="dua-total-row">
-                            <span>IGV</span>
+                            <span>IGV (16%+2%)</span>
                             <input type="text" id="txtDuaIgv" readonly value="0.00">
                         </div>
                         <div class="dua-total-row">
@@ -231,15 +297,6 @@
                         </div>
                      </div>
                 </div>
-
-            </div>
-
-            <hr class="divider">
-
-            <div id="sectionProductos">
-                <div class="product-add-section"><div class="autocomplete-wrapper" style="flex-grow: 1;"><input type="text" id="nc_buscarProducto" class="form-control search-product-input" placeholder="📦 Buscar productos para agregar..." autocomplete="off"><div id="listaProductos" class="autocomplete-list"></div></div><button class="btn-create-prod" onclick="abrirModalCrearProducto()">+ Crear Producto</button></div>
-                <div class="table-responsive-modal" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"><table class="modal-table"><thead><tr><th>PRODUCTO</th><th>UNIDAD</th><th style="width: 200px;">TIPO IGV</th><th style="width: 80px;">CANT.</th><th style="width: 100px;">VAL. UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th><th></th></tr></thead><tbody id="nc_tablaProductos"></tbody></table></div>
-                <div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="nc_txtNoGravado">0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="nc_txtSubTotal">0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="nc_txtIGV">0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="nc_txtTotal">0.00</span></div></div></div>
             </div>
 
         </div>
@@ -247,72 +304,29 @@
     </div>
 </div>
 
-<div id="modalDatosDua" class="modal-overlay" style="z-index: 2500;">
-    <div class="modal-content" style="max-width: 500px;">
+<div id="modalDatosNoDomiciliado" class="modal-overlay" style="z-index: 2500;">
+    <div class="modal-content" style="max-width: 400px;">
         <div class="modal-header">
-            <h3>AGREGAR MAS DATOS</h3>
-            <span class="close-modal" onclick="cerrarModal('modalDatosDua')">&times;</span>
+            <h3>Datos Referencia DUA</h3>
+            <span class="close-modal" onclick="cerrarModal('modalDatosNoDomiciliado')">&times;</span>
         </div>
         <div class="modal-body" style="padding: 20px;">
-            
-            <div class="dua-form-row">
-                <label>Fecha Vencimiento o Pago:</label>
-                <input type="date" id="dua_fechaPago" class="form-control">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Serie Ref. (3 dígitos) *</label>
+                <input type="text" id="nd_serie" class="form-control" maxlength="3" placeholder="Ej: 118">
             </div>
-            <div class="dua-form-row">
-                <label>Percepción (%):</label>
-                <div class="input-with-symbol">
-                    <input type="number" id="dua_percepcion" class="form-control dua-calc" placeholder="0" min="0" step="0.01">
-                    <span class="symbol">%</span>
-                </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Año *</label>
+                <select id="nd_anio" class="form-control"></select>
             </div>
-
-            <hr style="margin: 15px 0; border-top: 1px solid #eee;">
-            <h4 style="margin-bottom: 15px; font-size: 14px; color: #333; text-transform: uppercase;">DATOS IMPORTACION DUA</h4>
-
-            <div class="dua-form-row">
-                <label>Año emisión DUA - DSI:</label>
-                <select id="dua_anio" class="form-control"></select>
+            <div class="form-group">
+                <label>Número Ref. (6 dígitos) *</label>
+                <input type="text" id="nd_numero" class="form-control" maxlength="6" placeholder="Ej: 123456">
             </div>
-            
-            <div class="dua-form-row">
-                <label>Valor FOB - Servicio:</label>
-                <input type="number" id="dua_fob" class="form-control dua-calc" placeholder="0.000" step="0.001">
-            </div>
-            <div class="dua-form-row">
-                <label>Valor Flete:</label>
-                <input type="number" id="dua_flete" class="form-control dua-calc" placeholder="0.000" step="0.001">
-            </div>
-            <div class="dua-form-row">
-                <label>Valor Seguro:</label>
-                <input type="number" id="dua_seguro" class="form-control dua-calc" placeholder="0.000" step="0.001">
-            </div>
-            <div class="dua-form-row">
-                <label>Ad Valorem:</label>
-                <input type="number" id="dua_advalorem" class="form-control dua-calc" placeholder="0.000" step="0.001">
-            </div>
-            <div class="dua-form-row">
-                <label>ISC:</label>
-                <input type="number" id="dua_isc" class="form-control dua-calc" placeholder="0.000" step="0.001">
-            </div>
-            <div class="dua-form-row">
-                <label>Monto NO Gravado:</label>
-                <input type="number" id="dua_noGravado" class="form-control dua-calc" placeholder="0.000" step="0.001">
-            </div>
-            
-            <div class="dua-form-row">
-                <label>IPM (2%):</label>
-                <input type="number" id="dua_ipm" class="form-control" readonly style="background-color: #f3f4f6;">
-            </div>
-            <div class="dua-form-row">
-                <label>IGV (14%):</label>
-                <input type="number" id="dua_igv" class="form-control" readonly style="background-color: #f3f4f6;">
-            </div>
-
         </div>
         <div class="modal-footer">
-            <button class="btn-dua-save" onclick="cerrarModal('modalDatosDua')">GUARDAR</button>
-            <button class="btn-dua-close" onclick="cerrarModal('modalDatosDua')">CERRAR</button>
+            <button class="btn-dua-save" onclick="guardarDatosNoDomiciliadoTemp()">GUARDAR</button>
+            <button class="btn-dua-close" onclick="cerrarModal('modalDatosNoDomiciliado')">CERRAR</button>
         </div>
     </div>
 </div>
