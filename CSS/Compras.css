@@ -237,7 +237,6 @@ a {
     color: #999;
 }
 
-/* FILTROS DE FECHA */
 .filter-group {
     display: flex;
     flex-direction: column;
@@ -297,7 +296,6 @@ a {
     border-color: #3d4f5d;
 }
 
-/* Tabla */
 .tabla-container {
     background: white;
     border-radius: 8px;
@@ -321,6 +319,33 @@ a {
     border-bottom: 1px solid #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+/* ESTILOS PARA ENCABEZADO INTERACTIVO (SORT) */
+.th-sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+    position: relative;
+}
+.th-sortable:hover {
+    background-color: #f0f0f0 !important;
+    color: #3d4f5d !important;
+}
+.th-sortable i {
+    margin-left: 5px;
+    font-size: 14px;
+    color: #999;
+}
+.th-sortable.active i {
+    color: #3d4f5d;
+    font-weight: bold;
+}
+
+/* ANCHO FIJO PARA LA FECHA */
+.th-date-fixed {
+    width: 180px; 
+    min-width: 180px;
 }
 
 .tabla-datos td {
@@ -471,6 +496,11 @@ a {
     z-index: 2000;
 }
 
+/* Modal DUA (Layer 2100) */
+.modal-dua-layer {
+    z-index: 2100;
+}
+
 .modal-content {
     background: white;
     width: 95%;
@@ -483,6 +513,13 @@ a {
     flex-direction: column;
     max-height: 90vh;
 }
+
+/* Modal Sizes */
+.modal-lg { max-width: 1200px; }
+.modal-md { max-width: 800px; }
+.modal-md-700 { max-width: 700px; }
+.modal-sm { max-width: 400px; }
+.modal-xs { max-width: 500px; }
 
 @keyframes slideDown {
     from { transform: translateY(-50px); opacity: 0; }
@@ -561,7 +598,9 @@ a {
    7. FORMULARIOS Y VALIDACIONES
    ========================================= */
 .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.grid-3-col { grid-template-columns: repeat(3, 1fr); }
 .full-width { grid-column: span 3; }
+.flex-1 { flex: 1; }
 .form-group { display: flex; flex-direction: column; }
 .form-group label { font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #444; }
 
@@ -581,6 +620,8 @@ a {
 /* AUTOCOMPLETE */
 .autocomplete-wrapper { position: relative; width: 100%; }
 .search-with-clear { position: relative; display: flex; align-items: center; }
+.search-flex-container { display: flex; gap: 8px; }
+.flex-grow-1 { flex-grow: 1; }
 
 #nc_buscarProveedor { width: 100%; padding-right: 35px; text-overflow: ellipsis; }
 
@@ -619,6 +660,7 @@ a {
     border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap;
 }
 .btn-create-prod:hover { background: #f0f0f0; }
+.px-20 { padding: 0 20px; }
 
 /* INPUTS TABLA */
 .input-table { width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: right; }
@@ -643,7 +685,7 @@ a {
 .input-with-prefix input { border: none; flex: 1; padding: 10px; outline: none; }
 .input-with-prefix.error { border-color: #dc3545; }
 
-/* ESTILOS INPUT + BOTÓN TEXTO (AGREGADO) */
+/* ESTILOS INPUT + BOTÓN TEXTO */
 .input-with-button {
     display: flex;
     gap: 8px;
@@ -680,16 +722,25 @@ a {
 .info-item p { font-size: 16px; color: #222; margin: 0; }
 .info-item .font-bold { font-weight: 600; font-size: 17px; }
 .info-item small { font-size: 13px; color: #666; display: block; margin-top: 3px; }
+.text-muted { color: #666; }
 
+/* Badge para Documentos */
 .doc-badge { display: flex; gap: 10px; align-items: center; }
 .badge-dark { background: #000; color: white; padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; }
 .badge-number-modal { background: #e3f2fd; color: #1565c0; padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; border: 1px solid #bbdefb; }
+.md-text { font-size: 16px; }
 
+/* Tabla Modal */
 .modal-table { width: 100%; border-collapse: collapse; border: 1px solid #eee; margin-top: 10px; }
 .modal-table th { background: #f9fafb; color: #555; font-weight: 700; text-transform: uppercase; font-size: 13px; padding: 14px 12px; border-bottom: 2px solid #eee; text-align: left; }
 .modal-table td { padding: 14px 12px; border-bottom: 1px solid #eee; color: #333; font-size: 14px; }
 .text-right { text-align: right !important; }
+.table-scroll-container { margin-top: 15px; max-height: 300px; overflow-y: auto; }
+.w-200 { width: 200px; }
+.w-80 { width: 80px; }
+.w-100 { width: 100px; }
 
+/* Totales */
 .totals-section { display: flex; justify-content: flex-end; margin-top: 30px; }
 .totals-box { width: 350px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
 .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px; color: #555; }
@@ -780,19 +831,10 @@ a {
 .btn-dua-toggle:hover {
     background-color: #d5d5db;
 }
+.btn-end-container { display: flex; align-items: flex-end; }
 
 /* Estilos internos del modal DUA */
-.dua-form-row {
-    margin-bottom: 12px;
-    display: flex;
-    flex-direction: column;
-}
-.dua-form-row label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 5px;
-}
+.dua-input-layout { display: flex; gap: 20px; align-items: flex-start; }
 
 .input-with-symbol {
     position: relative;
@@ -842,6 +884,7 @@ a {
     border-radius: 6px;
     width: 320px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    flex-shrink: 0;
 }
 
 .dua-total-row {
@@ -871,3 +914,43 @@ a {
     outline: none;
     font-size: 14px;
 }
+
+/* =========================================
+   12. ESTILOS DETALLE DUA (DESGLOSE)
+   ========================================= */
+.dua-breakdown-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 6px;
+}
+
+.dua-final-total {
+    text-align: right;
+    margin-top: 15px;
+}
+
+.total-label {
+    font-size: 18px;
+    font-weight: 800;
+    margin-right: 10px;
+}
+
+.total-amount {
+    font-size: 20px;
+    font-weight: 800;
+    color: #3d4f5d;
+}
+
+/* Clases de utilidad */
+.hidden { display: none; }
+.bg-light { background-color: #f3f4f6; }
+.mb-15 { margin-bottom: 15px; }
+.p-20 { padding: 20px; }
+.section-title { margin-bottom: 15px; font-size: 14px; color: #333; }
+.z-2100 { z-index: 2100; }
+.z-2200 { z-index: 2200; }
+.z-2300 { z-index: 2300; }
+.z-2500 { z-index: 2500; }

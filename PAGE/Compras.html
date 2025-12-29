@@ -74,7 +74,9 @@
         <table class="tabla-datos">
             <thead>
                 <tr>
-                    <th>FECHA</th>
+                    <th class="th-sortable th-date-fixed" id="thFecha" onclick="alternarOrdenFecha()" title="Clic para cambiar orden">
+                        FECHA <i class='bx bx-sort-alt-2'></i>
+                    </th>
                     <th>ALMACÉN</th>
                     <th>DOCUMENTO</th>
                     <th>SERIE - NÚMERO</th>
@@ -128,20 +130,20 @@
                 <div class="spinner"></div>
                 <p>Cargando detalles...</p>
             </div>
-            <div id="modalContentBody" style="display: none;">
+            <div id="modalContentBody" class="hidden">
                 <div class="info-grid">
                     <div class="info-item"><label>DOCUMENTO</label><div class="doc-badge"><span id="m_tipoDoc" class="badge-dark">-</span><span id="m_serieNumero" class="badge-number-modal">-</span></div></div>
                     <div class="info-item"><label>FECHA DE EMISIÓN</label><p id="m_fechaEmision">-</p></div>
-                    <div class="info-item"><label>PROVEEDOR</label><p id="m_proveedor" class="font-bold">-</p><small id="m_ruc" style="color:#777">-</small></div>
+                    <div class="info-item"><label>PROVEEDOR</label><p id="m_proveedor" class="font-bold">-</p><small id="m_ruc" class="text-muted">-</small></div>
                     <div class="info-item"><label>ALMACÉN</label><p id="m_almacen">-</p></div>
                     <div class="info-item"><label>MONEDA</label><p id="m_moneda">-</p></div>
                     <div class="info-item"><label>FECHA DE REGISTRO</label><p id="m_fechaRegistro">-</p></div>
                 </div>
                 
-                <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+                <hr class="divider">
                 
                 <div id="m_seccionProductos">
-                    <h4 style="margin-bottom:15px; font-size:14px; color:#333;"><i class='bx bx-list-ul'></i> Detalle de Productos</h4>
+                    <h4 class="section-title"><i class='bx bx-list-ul'></i> Detalle de Productos</h4>
                     <div class="table-responsive-modal">
                         <table class="modal-table">
                             <thead>
@@ -162,7 +164,7 @@
                         <div class="total-row"><span>SubTotal:</span><span id="m_totalSubtotal">0.00</span></div>
                         <div class="total-row"><span>IGV:</span><span id="m_totalIgv">0.00</span></div>
                         
-                        <div class="total-row" id="m_rowPercepcion" style="display:none; color: #3d4f5d;">
+                        <div class="total-row hidden" id="m_rowPercepcion">
                             <span>Percepción:</span><span id="m_totalPercepcion">0.00</span>
                         </div>
 
@@ -172,6 +174,79 @@
             </div>
         </div>
         <div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalDetalle')">Cerrar</button></div>
+    </div>
+</div>
+
+<div id="modalDetalleDua" class="modal-overlay modal-dua-layer">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3><i class='bx bxs-ship'></i> Detalles de DUA/DAM</h3>
+            <span class="close-modal" onclick="cerrarModal('modalDetalleDua')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="modalLoaderDua" class="loader-container">
+                <div class="spinner"></div>
+                <p>Cargando información aduanera...</p>
+            </div>
+            
+            <div id="modalContentDua" class="hidden">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>DOCUMENTO</label>
+                        <div class="doc-badge">
+                            <span id="md_tipoDoc" class="badge-dark">DUA/DAM</span>
+                            <span id="md_numero" class="badge-number-modal">-</span>
+                        </div>
+                    </div>
+                    <div class="info-item"><label>FECHA PAGO</label><p id="md_fechaPago">-</p></div>
+                    <div class="info-item"><label>AGENTE / PROVEEDOR</label><p id="md_proveedor" class="font-bold">-</p><small id="md_docProveedor">-</small></div>
+                    <div class="info-item"><label>ALMACÉN</label><p id="md_almacen">-</p></div>
+                    <div class="info-item"><label>MONEDA</label><p id="md_moneda">-</p></div>
+                </div>
+
+                <hr class="divider">
+                
+                <h4 class="section-title">Desglose de Importación</h4>
+                
+                <div class="dua-breakdown-container">
+                    <div class="info-item"><label>FOB</label><p id="md_fob">0.00</p></div>
+                    <div class="info-item"><label>FLETE</label><p id="md_flete">0.00</p></div>
+                    <div class="info-item"><label>SEGURO</label><p id="md_seguro">0.00</p></div>
+                    <div class="info-item"><label>VALOR CIF</label><p id="md_cif">0.00</p></div>
+                    
+                    <div class="info-item"><label>AD VALOREM</label><p id="md_advalorem">0.00</p></div>
+                    <div class="info-item"><label>PERCEPCIÓN</label><p id="md_percepcion">0.00</p></div>
+                    <div class="info-item"><label>IPM</label><p id="md_ipm">0.00</p></div>
+                    <div class="info-item"><label>IGV</label><p id="md_igv">0.00</p></div>
+                </div>
+                
+                <div class="dua-final-total">
+                    <span class="total-label">TOTAL DUA:</span>
+                    <span id="md_total" class="total-amount">0.00</span>
+                </div>
+
+                <hr class="divider">
+
+                <h4 class="section-title"><i class='bx bx-link'></i> Facturas Relacionadas</h4>
+                <div class="table-responsive-modal">
+                    <table class="modal-table">
+                        <thead>
+                            <tr>
+                                <th>FECHA EMISIÓN</th>
+                                <th>N° COMPROBANTE</th>
+                                <th>PROVEEDOR</th>
+                                <th class="text-right">TOTAL</th>
+                                <th class="text-center">VER</th>
+                            </tr>
+                        </thead>
+                        <tbody id="md_tablaRelacionadas"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" onclick="cerrarModal('modalDetalleDua')">Cerrar</button>
+        </div>
     </div>
 </div>
 
@@ -188,22 +263,22 @@
                 
                 <div class="form-group full-width">
                     <label>Proveedor *</label>
-                    <div style="display: flex; gap: 8px;">
-                        <div class="autocomplete-wrapper search-with-clear" style="flex-grow: 1;">
+                    <div class="search-flex-container">
+                        <div class="autocomplete-wrapper search-with-clear flex-grow-1">
                             <input type="text" id="nc_buscarProveedor" class="form-control" placeholder="Buscar proveedor por nombre o documento..." autocomplete="off">
                             <i class='bx bx-x clear-autocomplete' id="btnLimpiarProveedor"></i>
                             <div id="listaProveedores" class="autocomplete-list"></div>
                             <input type="hidden" id="nc_idProveedor">
                         </div>
-                        <button class="btn-create-prod" onclick="abrirModalCrearProveedor()" style="padding: 0 20px;">+ Nueva Persona</button>
+                        <button class="btn-create-prod px-20" onclick="abrirModalCrearProveedor()">+ Nueva Persona</button>
                     </div>
                     <span class="error-message" id="error_nc_proveedor">Debe seleccionar un proveedor</span>
                 </div>
 
                 <div class="form-group"><label>Moneda *</label><select id="nc_moneda" class="form-control"></select><span class="error-message" id="error_nc_moneda">Requerido</span></div>
                 
-                <div class="form-group" style="display: flex; align-items: flex-end;">
-                    <button type="button" id="btnNoDomData" class="btn-dua-toggle" style="display: none; width: 100%; justify-content: center;">
+                <div class="form-group btn-end-container">
+                    <button type="button" id="btnNoDomData" class="btn-dua-toggle hidden">
                         <i class='bx bx-plus-circle'></i> Agregar Mas Datos
                     </button>
                 </div>
@@ -212,16 +287,16 @@
             <hr class="divider">
 
             <div id="sectionProductos">
-                <div class="product-add-section"><div class="autocomplete-wrapper" style="flex-grow: 1;"><input type="text" id="nc_buscarProducto" class="form-control search-product-input" placeholder="📦 Buscar productos para agregar..." autocomplete="off"><div id="listaProductos" class="autocomplete-list"></div></div><button class="btn-create-prod" onclick="abrirModalCrearProducto()">+ Crear Producto</button></div>
-                <div class="table-responsive-modal" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"><table class="modal-table"><thead><tr><th>PRODUCTO</th><th>UNIDAD</th><th style="width: 200px;">TIPO IGV</th><th style="width: 80px;">CANT.</th><th style="width: 100px;">VAL. UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th><th></th></tr></thead><tbody id="nc_tablaProductos"></tbody></table></div>
+                <div class="product-add-section"><div class="autocomplete-wrapper flex-grow-1"><input type="text" id="nc_buscarProducto" class="form-control search-product-input" placeholder="📦 Buscar productos para agregar..." autocomplete="off"><div id="listaProductos" class="autocomplete-list"></div></div><button class="btn-create-prod" onclick="abrirModalCrearProducto()">+ Crear Producto</button></div>
+                <div class="table-responsive-modal table-scroll-container"><table class="modal-table"><thead><tr><th>PRODUCTO</th><th>UNIDAD</th><th class="w-200">TIPO IGV</th><th class="w-80">CANT.</th><th class="w-100">VAL. UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th><th></th></tr></thead><tbody id="nc_tablaProductos"></tbody></table></div>
                 <div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="nc_txtNoGravado">0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="nc_txtSubTotal">0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="nc_txtIGV">0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="nc_txtTotal">0.00</span></div></div></div>
             </div>
 
-            <div id="sectionDatosDua" style="display: none;">
-                <h4 style="margin-bottom: 15px; font-size: 14px; color: #333; text-transform: uppercase; font-weight:700;"><i class='bx bxs-ship'></i> Datos de Importación (DUA/DAM)</h4>
+            <div id="sectionDatosDua" class="hidden">
+                <h4 class="section-title"><i class='bx bxs-ship'></i> Datos de Importación (DUA/DAM)</h4>
                 
-                <div style="display: flex; gap: 20px; align-items: flex-start;">
-                    <div class="form-grid" style="flex: 1; grid-template-columns: repeat(3, 1fr);">
+                <div class="dua-input-layout">
+                    <div class="form-grid flex-1 grid-3-col">
                         
                         <div class="form-group">
                             <label>F. Vencimiento/Pago:</label>
@@ -266,15 +341,15 @@
                         
                         <div class="form-group">
                             <label>IPM (2%):</label>
-                            <input type="number" id="dua_ipm" class="form-control" readonly style="background-color: #f3f4f6;">
+                            <input type="number" id="dua_ipm" class="form-control bg-light" readonly>
                         </div>
                         <div class="form-group">
                             <label>IGV (16%):</label>
-                            <input type="number" id="dua_igv" class="form-control" readonly style="background-color: #f3f4f6;">
+                            <input type="number" id="dua_igv" class="form-control bg-light" readonly>
                         </div>
                     </div>
 
-                    <div class="dua-totals-box" style="width: 280px; flex-shrink: 0;">
+                    <div class="dua-totals-box">
                         <div class="dua-total-row">
                             <span>SUBTOTAL</span>
                             <input type="text" id="txtDuaSubtotal" readonly value="0.00">
@@ -304,18 +379,18 @@
     </div>
 </div>
 
-<div id="modalDatosNoDomiciliado" class="modal-overlay" style="z-index: 2500;">
-    <div class="modal-content" style="max-width: 400px;">
+<div id="modalDatosNoDomiciliado" class="modal-overlay z-2500">
+    <div class="modal-content modal-sm">
         <div class="modal-header">
             <h3>Datos Referencia DUA</h3>
             <span class="close-modal" onclick="cerrarModal('modalDatosNoDomiciliado')">&times;</span>
         </div>
-        <div class="modal-body" style="padding: 20px;">
-            <div class="form-group" style="margin-bottom: 15px;">
+        <div class="modal-body p-20">
+            <div class="form-group mb-15">
                 <label>Serie Ref. (3 dígitos) *</label>
                 <input type="text" id="nd_serie" class="form-control" maxlength="3" placeholder="Ej: 118">
             </div>
-            <div class="form-group" style="margin-bottom: 15px;">
+            <div class="form-group mb-15">
                 <label>Año *</label>
                 <select id="nd_anio" class="form-control"></select>
             </div>
@@ -331,9 +406,9 @@
     </div>
 </div>
 
-<div id="modalCrearProducto" class="modal-overlay" style="z-index: 2100;"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3>Nuevo Producto</h3><span class="close-modal" onclick="cerrarModal('modalCrearProducto')">&times;</span></div><div class="modal-body"><form id="formNuevoProducto"><div class="form-grid"><div class="form-group full-width"><label>Código *</label><input type="text" id="np_codigo" class="form-control" placeholder="Ej: PROD001"><span class="error-message" id="error_np_codigo">Requerido</span></div><div class="form-group full-width"><label>Nombre *</label><input type="text" id="np_nombre" class="form-control" placeholder="Nombre del producto"><span class="error-message" id="error_np_nombre">Requerido</span></div><div class="form-group full-width"><label>Descripción</label><textarea id="np_descripcion" class="form-control" rows="2" placeholder="Descripción breve"></textarea></div><div class="form-group"><label>Unidad de Medida *</label><select id="np_unidad" class="form-control"></select><span class="error-message" id="error_np_unidad">Requerido</span></div><div class="form-group"><label>Tipo de IGV *</label><select id="np_igv" class="form-control"></select><span class="error-message" id="error_np_igv">Requerido</span></div><div class="form-group full-width"><label>Categoría *</label><div class="input-with-button"><select id="np_categoria" class="form-control"></select><button type="button" class="btn-add-inline" onclick="abrirModalNuevaCategoria()">➕ Crear Categoría</button></div><span class="error-message" id="error_np_categoria">Requerido</span></div><div class="form-group"><label>Precio de Compra</label><input type="number" id="np_precioCompra" class="form-control" value="0"></div><div class="form-group"><label>Precio de Venta *</label><input type="number" id="np_precioVenta" class="form-control" placeholder="0"><span class="error-message" id="error_np_precioVenta">Requerido</span></div></div></form></div><div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalCrearProducto')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevoProducto()">Guardar</button></div></div></div>
-<div id="modalNuevaCategoria" class="modal-overlay" style="z-index: 2300;"><div class="modal-content" style="max-width: 500px;"><div class="modal-header"><h3>Nueva Categoría</h3><span class="close-modal" onclick="cerrarModal('modalNuevaCategoria')">&times;</span></div><div class="modal-body"><form id="formNuevaCategoria"><div class="form-group" style="margin-bottom: 15px;"><label>Nombre *</label><input type="text" id="ncat_nombre" class="form-control" placeholder="Ej: Bebidas"><span class="error-message" id="error_ncat_nombre">Requerido</span></div><div class="form-group"><label>Descripción</label><textarea id="ncat_descripcion" class="form-control" placeholder="Opcional"></textarea></div></form></div><div class="modal-footer"><button type="button" class="btn-close-modal" onclick="cerrarModal('modalNuevaCategoria')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevaCategoria()">Guardar</button></div></div></div>
-<div id="modalCrearProveedor" class="modal-overlay" style="z-index: 2200;"><div class="modal-content" style="max-width: 700px;"><div class="modal-header"><h3>Nuevo Proveedor</h3><span class="close-modal" onclick="cerrarModal('modalCrearProveedor')">&times;</span></div><div class="modal-body"><form id="formNuevoProveedor"><div class="form-grid"><div class="form-group"><label>Tipo Documento *</label><select id="nprov_tipoDoc" class="form-control"></select><span class="error-message" id="error_nprov_tipoDoc">Requerido</span></div><div class="form-group full-width" style="grid-column: span 2;"><label>N° Documento *</label><input type="text" id="nprov_numeroDoc" class="form-control" placeholder="Ej: 12345678" maxlength="25"><span class="error-message" id="error_nprov_numeroDoc">Inválido</span></div><div class="form-group full-width"><label>Nombre Completo / Razón Social *</label><input type="text" id="nprov_nombre" class="form-control" placeholder="Ingrese Nombre o Razón Social"><span class="error-message" id="error_nprov_nombre">Requerido</span></div><div class="form-group"><label>Email</label><input type="email" id="nprov_email" class="form-control" placeholder="correo@ejemplo.com"></div><div class="form-group" style="grid-column: span 2;"><label>Teléfono</label><input type="text" id="nprov_telefono" class="form-control" placeholder="999 999 999"></div><div class="form-group full-width"><label>Dirección</label><input type="text" id="nprov_direccion" class="form-control" placeholder="Dirección completa"></div></div></form></div><div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalCrearProveedor')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevoProveedor()">Guardar</button></div></div></div>
+<div id="modalCrearProducto" class="modal-overlay z-2100"><div class="modal-content modal-md"><div class="modal-header"><h3>Nuevo Producto</h3><span class="close-modal" onclick="cerrarModal('modalCrearProducto')">&times;</span></div><div class="modal-body"><form id="formNuevoProducto"><div class="form-grid"><div class="form-group full-width"><label>Código *</label><input type="text" id="np_codigo" class="form-control" placeholder="Ej: PROD001"><span class="error-message" id="error_np_codigo">Requerido</span></div><div class="form-group full-width"><label>Nombre *</label><input type="text" id="np_nombre" class="form-control" placeholder="Nombre del producto"><span class="error-message" id="error_np_nombre">Requerido</span></div><div class="form-group full-width"><label>Descripción</label><textarea id="np_descripcion" class="form-control" rows="2" placeholder="Descripción breve"></textarea></div><div class="form-group"><label>Unidad de Medida *</label><select id="np_unidad" class="form-control"></select><span class="error-message" id="error_np_unidad">Requerido</span></div><div class="form-group"><label>Tipo de IGV *</label><select id="np_igv" class="form-control"></select><span class="error-message" id="error_np_igv">Requerido</span></div><div class="form-group full-width"><label>Categoría *</label><div class="input-with-button"><select id="np_categoria" class="form-control"></select><button type="button" class="btn-add-inline" onclick="abrirModalNuevaCategoria()">➕ Crear Categoría</button></div><span class="error-message" id="error_np_categoria">Requerido</span></div><div class="form-group"><label>Precio de Compra</label><input type="number" id="np_precioCompra" class="form-control" value="0"></div><div class="form-group"><label>Precio de Venta *</label><input type="number" id="np_precioVenta" class="form-control" placeholder="0"><span class="error-message" id="error_np_precioVenta">Requerido</span></div></div></form></div><div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalCrearProducto')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevoProducto()">Guardar</button></div></div></div>
+<div id="modalNuevaCategoria" class="modal-overlay z-2300"><div class="modal-content modal-xs"><div class="modal-header"><h3>Nueva Categoría</h3><span class="close-modal" onclick="cerrarModal('modalNuevaCategoria')">&times;</span></div><div class="modal-body"><form id="formNuevaCategoria"><div class="form-group mb-15"><label>Nombre *</label><input type="text" id="ncat_nombre" class="form-control" placeholder="Ej: Bebidas"><span class="error-message" id="error_ncat_nombre">Requerido</span></div><div class="form-group"><label>Descripción</label><textarea id="ncat_descripcion" class="form-control" placeholder="Opcional"></textarea></div></form></div><div class="modal-footer"><button type="button" class="btn-close-modal" onclick="cerrarModal('modalNuevaCategoria')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevaCategoria()">Guardar</button></div></div></div>
+<div id="modalCrearProveedor" class="modal-overlay z-2200"><div class="modal-content modal-md-700"><div class="modal-header"><h3>Nuevo Proveedor</h3><span class="close-modal" onclick="cerrarModal('modalCrearProveedor')">&times;</span></div><div class="modal-body"><form id="formNuevoProveedor"><div class="form-grid"><div class="form-group"><label>Tipo Documento *</label><select id="nprov_tipoDoc" class="form-control"></select><span class="error-message" id="error_nprov_tipoDoc">Requerido</span></div><div class="form-group full-width" style="grid-column: span 2;"><label>N° Documento *</label><input type="text" id="nprov_numeroDoc" class="form-control" placeholder="Ej: 12345678" maxlength="25"><span class="error-message" id="error_nprov_numeroDoc">Inválido</span></div><div class="form-group full-width"><label>Nombre Completo / Razón Social *</label><input type="text" id="nprov_nombre" class="form-control" placeholder="Ingrese Nombre o Razón Social"><span class="error-message" id="error_nprov_nombre">Requerido</span></div><div class="form-group"><label>Email</label><input type="email" id="nprov_email" class="form-control" placeholder="correo@ejemplo.com"></div><div class="form-group" style="grid-column: span 2;"><label>Teléfono</label><input type="text" id="nprov_telefono" class="form-control" placeholder="999 999 999"></div><div class="form-group full-width"><label>Dirección</label><input type="text" id="nprov_direccion" class="form-control" placeholder="Dirección completa"></div></div></form></div><div class="modal-footer"><button class="btn-close-modal" onclick="cerrarModal('modalCrearProveedor')">Cancelar</button><button class="btn-save-modal" onclick="guardarNuevoProveedor()">Guardar</button></div></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>

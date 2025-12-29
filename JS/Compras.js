@@ -1,12 +1,11 @@
 const API_BASE = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api";
 
 // ENDPOINTS
-const EP_PURCHASE = `${API_BASE}/Purchase`; // Se mantiene para el registro (POST)
-const EP_PURCHASE_LIST = `${API_BASE}/PurchaseDocument`; // Endpoint para el listado (GET)
+const EP_PURCHASE = `${API_BASE}/Purchase`; 
+const EP_PURCHASE_LIST = `${API_BASE}/PurchaseDocument`; 
+const EP_DUA_DETAIL = `${API_BASE}/Dua`; 
 
-// Nuevo endpoint para No Domiciliados
 const EP_PURCHASE_NON_DOMICILED = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api/Purchase/non-domiciled";
-// Nuevo endpoint para DUA
 const EP_PURCHASE_DUA = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api/Purchase/dua";
 
 const EP_WAREHOUSE = `${API_BASE}/Warehouse/select`; 
@@ -24,21 +23,22 @@ let pageSize = 10;
 let totalPages = 1;
 let searchTerm = "";
 let warehouseId = "";
-// Nuevas variables para fechas
 let startDate = "";
 let endDate = "";
+
+// LÓGICA DE ORDENAMIENTO (0: Default, 1: Emission, 2: Created)
+let sortState = 0; 
+let sortBy = ""; 
 
 let cachedIgvOptions = ""; 
 let igvListCache = []; 
 let searchResults = {}; 
 let searchTimer = null; 
 
-// VARIABLES TEMPORALES PARA DATOS NO DOMICILIADO
 let tempNdSerie = "";
 let tempNdAnio = "";
 let tempNdNumero = "";
 
-// CONFIGURACIÓN TOASTR
 toastr.options = {
     "closeButton": true, "debug": false, "newestOnTop": false, "progressBar": true,
     "positionClass": "toast-bottom-right", "preventDuplicates": false, "timeOut": "5000"
@@ -47,7 +47,6 @@ toastr.options = {
 $(document).ready(function() {
     loadWarehouses();
 
-    // APLICAR CAMBIO SOLICITADO: MÁXIMO 25 DÍGITOS EN MODAL CREAR PROVEEDOR
     $('#nprov_numeroDoc').attr('maxlength', '25');
 
     $('#btnPrev').click(() => cambiarPagina(-1));
@@ -87,18 +86,11 @@ $(document).ready(function() {
 
     $(document).click(function(e) { if (!$(e.target).closest('.autocomplete-wrapper').length) { $('.autocomplete-list').hide(); } });
 
-    // =========================================================================
-    // LÓGICA CORREGIDA PARA INPUT DE N° DOCUMENTO (PROVEEDOR)
-    // =========================================================================
     $('#nprov_numeroDoc').on('input', function(e) {
-        // Obtenemos el texto del tipo seleccionado
         const tipoDocText = $('#nprov_tipoDoc option:selected').text().toUpperCase();
-        
-        // Solo forzamos "Solo Números" si es DNI o RUC
         if (tipoDocText.includes('DNI') || tipoDocText.includes('RUC')) {
             e.target.value = e.target.value.replace(/\D/g, ''); 
         }
-        
         validarReglasDocumento();
     });
     
@@ -108,13 +100,9 @@ $(document).ready(function() {
         $('#error_nprov_numeroDoc').removeClass('show');
     });
 
-    // ==========================================
-    // LOGICA: DETECTAR "NO DOMICILIADO" Y "DUA/DAM"
-    // ==========================================
     $('#nc_tipoDoc').on('change', function() {
         const selectedText = $(this).find("option:selected").text().toLowerCase();
         
-        // --- 1. NO DOMICILIADO ---
         const isNoDomiciliado = selectedText.includes("no domiciliado");
         const $serie = $('#nc_serie');
         const $numero = $('#nc_numero');
@@ -126,33 +114,23 @@ $(document).ready(function() {
             $errorSerie.removeClass('show');
             $numero.attr('maxlength', '20');
             $errorNumero.text('Requerido (Máx 20)'); 
-            
-            // Mostrar Botón Agregar Mas Datos (No Domiciliado)
-            $('#btnNoDomData').css('display', 'flex');
-            
-            // Mostrar Sección Productos (No Domiciliado usa productos)
+            $('#btnNoDomData').removeClass('hidden');
             $('#sectionProductos').show();
             $('#sectionDatosDua').hide();
-
         } else {
-            // Restablecer si no es No Domiciliado
             $serie.prop('disabled', false).css('background-color', '#fff');
             $numero.attr('maxlength', '8');
             $errorNumero.text('Requerido (Máx 8)');
             if($numero.val().length > 8) $numero.val($numero.val().substring(0, 8));
-            
-            // Ocultar Botón
-            $('#btnNoDomData').hide();
+            $('#btnNoDomData').addClass('hidden');
         }
 
-        // --- 2. DUA/DAM (Reemplazar tabla productos por campos DUA) ---
         const isDua = selectedText.includes("dua") || selectedText.includes("dam");
         if(isDua) {
-            $('#sectionProductos').hide(); // Ocultar productos y buscador
-            $('#sectionDatosDua').show();  // Mostrar campos DUA en el "rectángulo rojo"
-            $('#btnNoDomData').hide();     // Asegurar que el botón no aparezca en DUA
+            $('#sectionProductos').hide(); 
+            $('#sectionDatosDua').show();
+            $('#btnNoDomData').addClass('hidden'); 
         } else {
-            // Si no es DUA, mostrar productos (ya manejado arriba para No Domiciliado o Normal)
             if(!isNoDomiciliado) {
                 $('#sectionProductos').show();
                 $('#sectionDatosDua').hide();
@@ -160,22 +138,16 @@ $(document).ready(function() {
         }
     });
 
-    // EVENTO BOTÓN "Agregar Mas Datos" (No Domiciliado)
     $('#btnNoDomData').click(function() {
         $('#modalDatosNoDomiciliado').css('display', 'flex');
-        
-        // Pre-llenar si ya se había guardado
         if(tempNdSerie) $('#nd_serie').val(tempNdSerie);
         if(tempNdAnio) $('#nd_anio').val(tempNdAnio);
         if(tempNdNumero) $('#nd_numero').val(tempNdNumero);
     });
 
-    // Validar Inputs del modal pequeño
     $('#nd_serie').on('input', function() { this.value = this.value.replace(/\D/g, '').substring(0,3); });
     $('#nd_numero').on('input', function() { this.value = this.value.replace(/\D/g, '').substring(0,6); });
 
-    // --- CÁLCULOS DUA (IPM e IGV) ---
-    // IPM = 2%, IGV = 16% (Solicitado)
     $('.dua-calc').on('input blur', function() {
         if(event.type === 'blur') {
              const val = parseFloat($(this).val());
@@ -184,10 +156,6 @@ $(document).ready(function() {
         calcularDuaTotals();
     });
 
-    // ==========================================
-    // LOGICA DE FILTROS DE FECHA (CON X)
-    // ==========================================
-    
     $('#startDate').on('change', function() {
         startDate = $(this).val();
         if(startDate) $('#clearStartDate').show();
@@ -220,9 +188,33 @@ $(document).ready(function() {
     });
 });
 
-// FUNCIONES AUXILIARES DUA
+function alternarOrdenFecha() {
+    sortState++;
+    if (sortState > 2) sortState = 0; 
+
+    const $th = $('#thFecha');
+    const $icon = $th.find('i');
+
+    $th.removeClass('active');
+    
+    if (sortState === 0) {
+        sortBy = ""; 
+        $th.html('FECHA <i class="bx bx-sort-alt-2"></i>');
+    } else if (sortState === 1) {
+        sortBy = "IssueDate"; 
+        $th.html('FECHA EMISIÓN <i class="bx bx-down-arrow-alt"></i>');
+        $th.addClass('active');
+    } else if (sortState === 2) {
+        sortBy = "CreatedDate"; 
+        $th.html('FECHA REGISTRO <i class="bx bx-down-arrow-alt"></i>');
+        $th.addClass('active');
+    }
+
+    currentPage = 1;
+    fetchCompras(currentPage);
+}
+
 function calculateDuaBaseSum() {
-    // Suma de la BASE (FOB + Flete + Seguro + Ad Valorem + ISC)
     const ids = ['dua_fob', 'dua_flete', 'dua_seguro', 'dua_advalorem', 'dua_isc'];
     let sum = 0;
     ids.forEach(id => {
@@ -235,18 +227,12 @@ function calcularDuaTotals() {
     const base = calculateDuaBaseSum();
     const noGravado = parseFloat($('#dua_noGravado').val()) || 0;
     
-    // Cálculos Impuestos
-    const ipm = base * 0.02; // 2%
-    const igv = base * 0.16; // 16% (CAMBIO SOLICITADO)
+    const ipm = base * 0.02; 
+    const igv = base * 0.16; 
     
-    // Percepción (Input Manual, o calculado si fuera necesario)
-    const percepRate = parseFloat($('#dua_percepcion').val()) || 0;
-    
-    // Actualizar campos readonly
     $('#dua_ipm').val(ipm.toFixed(3));
     $('#dua_igv').val(igv.toFixed(3));
 
-    // --- ACTUALIZAR CAJA DE TOTALES DUA ---
     const subtotal = base;
     const totalIgv = igv + ipm;
     const total = subtotal + totalIgv + noGravado;
@@ -255,16 +241,15 @@ function calcularDuaTotals() {
     $('#txtDuaNoGravado').val(formatoMoneda(noGravado));
     $('#txtDuaIgv').val(formatoMoneda(totalIgv));
     $('#txtDuaTotal').val(formatoMoneda(total));
-    $('#txtDuaPercepcion').val("0.00"); // Solicitado fijo en 0
+    $('#txtDuaPercepcion').val("0.00"); 
 }
 
 function llenarComboAnios() {
     const $sel = $('#dua_anio');
-    const $selNd = $('#nd_anio'); // También llenar el de No Domiciliado
+    const $selNd = $('#nd_anio'); 
     $sel.empty(); $selNd.empty();
     const currentYear = new Date().getFullYear(); 
     
-    // Loop Inverso: 2025 -> 2018
     for(let y = currentYear; y >= 2018; y--) {
         $sel.append(`<option value="${y}">${y}</option>`);
         $selNd.append(`<option value="${y}">${y}</option>`);
@@ -294,7 +279,7 @@ function formatoMoneda(valor) {
 }
 
 function formatearFechaPeru(fechaISO, incluirHora = false) {
-    if (!fechaISO) return '-';
+    if (!fechaISO || fechaISO.startsWith('0001')) return '-';
     const fecha = new Date(fechaISO);
     const opciones = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Lima' };
     if (incluirHora) { opciones.hour = '2-digit'; opciones.minute = '2-digit'; opciones.second = '2-digit'; opciones.hour12 = false; }
@@ -317,8 +302,12 @@ async function loadWarehouses() {
 async function fetchCompras(page) {
     const $tbody = $('#comprasBody'); $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">Cargando...</td></tr>');
     try {
-        // Usamos el endpoint de listado
-        const url = `${EP_PURCHASE_LIST}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
+        let url = `${EP_PURCHASE_LIST}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
+        
+        if (sortBy) {
+            url += `&sortBy=${sortBy}`;
+        }
+
         const response = await fetch(url); 
         const data = await response.json();
         $tbody.empty(); 
@@ -332,6 +321,8 @@ async function fetchCompras(page) {
             let docLabel = compra.documentType || compra.personDocumentType || 'DOC';
             const serieNumero = compra.voucherNumber || '-';
             const totalFmt = formatoMoneda(compra.total);
+            
+            const source = compra.documentSource || 'PURCHASE';
 
             const row = `<tr>
                 <td style="font-weight: 500;">${fecha}</td>
@@ -341,7 +332,11 @@ async function fetchCompras(page) {
                 <td><div style="font-weight: 600; color: #111827;">${compra.personName || 'Sin Nombre'}</div><div style="font-size: 11px; color: #6b7280; margin-top:2px;"><strong>${docLabel}:</strong> ${docNum}</div></td>
                 <td style="color: #4b5563;">${compra.currency || '-'}</td>
                 <td style="font-weight: 700; color: #111827;">${totalFmt}</td>
-                <td class="text-center"><button class="btn-action" onclick="abrirModalDetalle('${compra.id}')"><i class='bx bx-show'></i></button></td>
+                <td class="text-center">
+                    <button class="btn-action" onclick="abrirModalDetalle('${compra.id}', '${source}')">
+                        <i class='bx bx-show'></i>
+                    </button>
+                </td>
             </tr>`;
             $tbody.append(row);
         });
@@ -376,25 +371,19 @@ function irAPagina(pagina) {
     } 
 }
 
-// ==========================================
-// FUNCIÓN: LIMPIAR FORMULARIO COMPRA
-// ==========================================
 function limpiarFormularioCompra() {
-    // 1. Limpiar Inputs Normales
     $('#nc_serie').val('');
     $('#nc_numero').val('');
     $('#nc_buscarProveedor').val('');
     $('#nc_idProveedor').val('');
     $('#nc_buscarProducto').val('');
     
-    // 2. Limpiar Inputs DUA
     $('#dua_fechaPago').val('');
     $('#dua_percepcion').val('');
-    $('.dua-calc').val(''); // Limpia FOB, Flete, etc.
+    $('.dua-calc').val(''); 
     $('#dua_ipm').val('');
     $('#dua_igv').val('');
     
-    // 3. Limpiar Datos No Domiciliado Temp
     tempNdSerie = "";
     tempNdAnio = "";
     tempNdNumero = "";
@@ -402,45 +391,37 @@ function limpiarFormularioCompra() {
     $('#nd_anio').val('');
     $('#nd_numero').val('');
     
-    // Limpiar Caja Totales DUA
     $('#txtDuaSubtotal').val('0.00');
     $('#txtDuaNoGravado').val('0.00');
     $('#txtDuaIgv').val('0.00');
     $('#txtDuaTotal').val('0.00');
     $('#txtDuaPercepcion').val('0.00');
     
-    // 4. Resetear Fecha Principal
     document.getElementById('nc_fecha').valueAsDate = new Date();
 
-    // 5. Ocultar botones UI
     $('#btnLimpiarProveedor').hide();
     $('#listaProveedores').hide();
     $('#listaProductos').hide();
-    $('#btnNoDomData').hide(); // Ocultar botón No Domiciliado
+    $('#btnNoDomData').addClass('hidden'); 
 
-    // 6. Vaciar Tabla Productos
     $('#nc_tablaProductos').empty();
 
-    // 7. Resetear Totales Visuales y Errores
     calcularTotalesGlobales();
     $('.form-control').removeClass('error');
     $('.error-message').removeClass('show');
 
-    // 8. RESTAURAR ESTADO ORIGINAL
     $('#nc_serie').prop('disabled', false).css('background-color', '#fff'); 
     $('#nc_numero').attr('maxlength', '8');
     $('#error_nc_numero').text('Requerido (Máx 8)');
     
-    // Restaurar visibilidad Productos vs DUA (Volver a mostrar productos por defecto)
     $('#sectionProductos').show();
     $('#sectionDatosDua').hide();
 }
 
-// 2. MODAL NUEVA COMPRA
 async function abrirModalNuevaCompra() {
     $('#modalNuevaCompra').css('display', 'flex');
     limpiarFormularioCompra();
-    llenarComboAnios(); // Llenar años DUA
+    llenarComboAnios(); 
     
     const $btn = $('#modalNuevaCompra .btn-save-modal');
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Compra");
@@ -449,18 +430,11 @@ async function abrirModalNuevaCompra() {
     
     await cargarDropdown(EP_VOUCHER, 'nc_tipoDoc');
     
-    // ===============================================
-    // LÓGICA DE BLOQUEO DE OPCIONES (BOLETA / DUA)
-    // ===============================================
     $('#nc_tipoDoc option').each(function() {
         const text = $(this).text().toLowerCase();
-        
-        // Bloquear Boleta
         if(text.includes('boleta')) {
             $(this).prop('disabled', true);
         }
-        
-        // CAMBIO SOLICITADO: Deshabilitar DUA y DAM
         if(text.includes('dua') || text.includes('dam')) {
             $(this).prop('disabled', true);
         }
@@ -492,7 +466,6 @@ async function prepararOpcionesIGV() {
     } catch (error) { console.error(error); }
 }
 
-// BUSCADOR PROVEEDORES
 async function buscarPersona(texto) {
     const $list = $('#listaProveedores'); const term = texto || ""; 
     try { const res = await fetch(`${EP_PERSON}?searchTerm=${term}`); const data = await res.json(); const items = data.items || data;
@@ -517,7 +490,6 @@ function seleccionarProveedor(id, nombre, tipoDoc, numDoc) {
     $('#nc_buscarProveedor').removeClass('error'); $('#error_nc_proveedor').removeClass('show');
 }
 
-// BUSQUEDA PRODUCTOS
 async function buscarProducto(texto) {
     const $list = $('#listaProductos'); 
     const almacenId = $('#nc_almacen').val();
@@ -644,7 +616,6 @@ function guardarCompra() {
     const isNoDomiciliado = tipoDocText.includes("no domiciliado");
     const isDua = tipoDocText.includes("dua") || tipoDocText.includes("dam");
 
-    // VALIDAR SERIE
     const serie = $('#nc_serie').val().trim();
     if (!isNoDomiciliado) {
         if(serie.length !== 4) { 
@@ -664,13 +635,10 @@ function guardarCompra() {
 
     if(!$('#nc_idProveedor').val()){ $('#nc_buscarProveedor').addClass('error'); $('#error_nc_proveedor').addClass('show'); isValid = false; }
 
-    // VALIDACION ESPECIFICA
-    // Si NO es DUA (es decir, es Normal o No Domiciliado), valida productos.
     if (!isDua && $('#nc_tablaProductos tr').length === 0) { 
         toastr.warning("Agregue al menos un producto."); return; 
     }
 
-    // VALIDACION NO DOMICILIADO (Datos Extra)
     if(isNoDomiciliado && (!tempNdSerie || !tempNdAnio || !tempNdNumero)) {
         toastr.error("Para No Domiciliado, debe 'Agregar Más Datos' (Serie, Año, Número).");
         isValid = false;
@@ -684,7 +652,6 @@ function guardarCompra() {
 
     const payloadSerie = isNoDomiciliado ? null : serie;
 
-    // === FLUJO DUA ===
     if (isDua) {
         let duaValid = true;
         const duaFieldsRequired = ['dua_fechaPago', 'dua_anio', 'dua_fob', 'dua_flete', 'dua_seguro'];
@@ -751,7 +718,6 @@ function guardarCompra() {
         return; 
     }
 
-    // === FLUJO NORMAL O NO DOMICILIADO (CON PRODUCTOS) ===
     let productError = false;
     const detalles = [];
     $('#nc_tablaProductos tr').each(function() {
@@ -765,13 +731,11 @@ function guardarCompra() {
 
     if (productError) { toastr.error("Revise las cantidades y precios."); $btn.prop('disabled', false).html(originalText); return; }
 
-    // Objeto base
     let nuevaCompra = {
         warehouseId: $('#nc_almacen').val(), voucherTypeId: $('#nc_tipoDoc').val(), currencyId: $('#nc_moneda').val(), personId: $('#nc_idProveedor').val(),
         serie: payloadSerie, number: numero, issueDate: $('#nc_fecha').val(), details: detalles
     };
 
-    // Si es No Domiciliado, agregar campos extra
     if(isNoDomiciliado) {
         nuevaCompra.referenceDuaSerie = tempNdSerie;
         nuevaCompra.referenceDuaYear = parseInt(tempNdAnio);
@@ -866,40 +830,162 @@ async function guardarNuevaCategoria() {
 
 function cerrarModal(id){ 
     $(`#${id}`).fadeOut(200); 
-    if (id === 'modalNuevaCompra') limpiarFormularioCompra(); 
+    if (id === 'modalNuevaCompra') limpiarFormularioCompra();
+    
+    // Resetear estilos si se cierra el modal de detalle superpuesto
+    if (id === 'modalDetalle') {
+        const $modalContent = $(`#${id} .modal-content`);
+        // Restablecer estilos al cerrar para que la próxima vez sea normal
+        setTimeout(() => {
+            $(`#${id}`).css('z-index', '');
+            $modalContent.css({'max-width': '', 'width': ''});
+        }, 300);
+    }
 }
 
-async function abrirModalDetalle(purchaseId) {
-    if(!purchaseId) return;
-    $('#modalDetalle').css('display', 'flex'); $('#modalLoader').show(); $('#modalContentBody').hide();  
+// ===============================================
+// LÓGICA DE DETALLES (DUA vs NORMAL)
+// ===============================================
+async function abrirModalDetalle(id, source) {
+    if(!id) return;
+    
+    // CASO A: DETALLE DUA
+    if (source === 'DUA') {
+        $('#modalDetalleDua').css('display', 'flex');
+        $('#modalLoaderDua').show(); $('#modalContentDua').hide();
+        
+        try {
+            const url = `${EP_DUA_DETAIL}/${id}`;
+            const res = await fetch(url);
+            
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || "Error al cargar DUA");
+            }
+            
+            const item = await res.json();
+            renderDuaDetails(item);
+            
+            $('#modalLoaderDua').hide(); $('#modalContentDua').fadeIn(200);
+            
+        } catch (e) {
+            toastr.error(e.message);
+            cerrarModal('modalDetalleDua');
+        }
+        return;
+    }
+
+    // CASO B: DETALLE COMPRA (PURCHASE/NO DOMICILIADO)
+    $('#modalDetalle').css('display', 'flex'); 
+    $('#modalLoader').show(); $('#modalContentBody').hide();  
+    
+    // DETECCIÓN DE SUPERPOSICIÓN: Si el modal DUA está abierto, este modal debe ir encima y ser más pequeño
+    if ($('#modalDetalleDua').is(':visible')) {
+        $('#modalDetalle').css('z-index', '2200'); // Mayor que el DUA (2100)
+        $('#modalDetalle .modal-content').css({
+            'max-width': '900px', // Un poco más pequeño
+            'width': '90%'
+        });
+    } else {
+        // Estilo normal si se abre desde la tabla principal
+        $('#modalDetalle').css('z-index', '2000'); 
+        $('#modalDetalle .modal-content').css({
+            'max-width': '1200px',
+            'width': '95%'
+        });
+    }
+    
     try {
-        const res = await fetch(`${EP_PURCHASE}/${purchaseId}`); const item = await res.json();
-        const isDua = (item.voucherType || '').toUpperCase().includes('DUA') || (item.voucherType || '').toUpperCase().includes('DAM');
-        $('#m_tipoDoc').text(item.voucherType || 'Doc'); $('#m_serieNumero').text(item.voucherNumber || '-');
+        const res = await fetch(`${EP_PURCHASE}/${id}`);
+        if (!res.ok) {
+             const errData = await res.json().catch(() => ({}));
+             throw new Error(errData.message || "Error al cargar compra");
+        }
+        const item = await res.json();
+        
+        // Renderizar modal normal
+        $('#m_tipoDoc').text(item.voucherType || 'Doc'); 
+        $('#m_serieNumero').text(item.voucherNumber || '-');
         $('#m_fechaEmision').text(formatearFechaPeru(item.issueDate, false));
         $('#m_proveedor').text(item.personName || 'Sin Nombre');
-        const dNum = item.personDocumentNumber || ''; let dType = item.personDocumentType || (dNum.length===11?'RUC':'DNI');
+        const dNum = item.personDocumentNumber || ''; let dType = item.personDocumentType || 'DOC';
         $('#m_ruc').text(dNum ? `${dType}: ${dNum}` : '-');
-        $('#m_almacen').text(item.warehouse || '-'); $('#m_moneda').text(item.currency || 'Soles');
+        $('#m_almacen').text(item.warehouse || '-'); 
+        $('#m_moneda').text(item.currency || 'Soles');
         const fechaReg = item.createdDate || item.auditCreateDate || item.issueDate;
         $('#m_fechaRegistro').text(formatearFechaPeru(fechaReg, true));
         
-        if (isDua) {
-            $('#m_seccionProductos').hide(); $('#m_rowPercepcion').show();
-            const percepcion = item.dua ? item.dua.perceptionAmount : (item.perceptionAmount || 0);
-            $('#m_totalPercepcion').text(formatoMoneda(percepcion));
-        } else {
-            $('#m_seccionProductos').show(); $('#m_rowPercepcion').hide();
-            const $tb = $('#modalTableBody'); $tb.empty();
-            if(item.details){ 
-                item.details.forEach(d => {
-                    $tb.append(`<tr><td><span style="background:#f4f4f4; padding:2px 6px; border-radius:4px; border:1px solid #ddd; font-weight:600;">${d.productCode || '-'}</span></td><td><strong>${d.productName || '-'}</strong></td><td>${d.unitOfMeasure || 'UNI'}</td><td>${d.igvType || '-'}</td><td class="text-right">${(d.quantity||0).toFixed(2)}</td><td class="text-right">${formatoMoneda(d.unitValue)}</td><td class="text-right">${formatoMoneda(d.amount)}</td><td class="text-right">${formatoMoneda(d.taxAmount)}</td><td class="text-right"><strong>${formatoMoneda(d.lineTotal)}</strong></td></tr>`);
-                });
-            }
+        const $tb = $('#modalTableBody'); $tb.empty();
+        if(item.details){ 
+            item.details.forEach(d => {
+                $tb.append(`<tr><td><span style="background:#f4f4f4; padding:2px 6px; border-radius:4px; border:1px solid #ddd; font-weight:600;">${d.productCode || '-'}</span></td><td><strong>${d.productName || '-'}</strong></td><td>${d.unitOfMeasure || 'UNI'}</td><td>${d.igvType || '-'}</td><td class="text-right">${(d.quantity||0).toFixed(2)}</td><td class="text-right">${formatoMoneda(d.unitValue)}</td><td class="text-right">${formatoMoneda(d.amount)}</td><td class="text-right">${formatoMoneda(d.taxAmount)}</td><td class="text-right"><strong>${formatoMoneda(d.lineTotal)}</strong></td></tr>`);
+            });
         }
-        $('#m_totalNoGravado').text(`${formatoMoneda(item.exempt)}`); $('#m_totalSubtotal').text(`${formatoMoneda(item.subTotal)}`); $('#m_totalIgv').text(`${formatoMoneda(item.taxAmount)}`); $('#m_totalFinal').text(`${formatoMoneda(item.total)}`);
+        
+        $('#m_totalNoGravado').text(`${formatoMoneda(item.exempt)}`); 
+        $('#m_totalSubtotal').text(`${formatoMoneda(item.subTotal)}`); 
+        $('#m_totalIgv').text(`${formatoMoneda(item.taxAmount)}`); 
+        $('#m_totalFinal').text(`${formatoMoneda(item.total)}`);
+        
         $('#modalLoader').hide(); $('#modalContentBody').fadeIn(200);
-    } catch(e){ cerrarModal('modalDetalle'); }
+
+    } catch(e){ 
+        toastr.error(e.message);
+        cerrarModal('modalDetalle'); 
+    }
+}
+
+function renderDuaDetails(dua) {
+    // Cabecera MODIFICADA: Igualar diseño a modal de compras
+    // Usamos el id md_tipoDoc para el badge oscuro y md_numero para el badge claro
+    $('#md_tipoDoc').text(dua.voucherType || 'DUA/DAM'); 
+    $('#md_numero').text(dua.voucherNumber || '-');
+    
+    $('#md_fechaPago').text(formatearFechaPeru(dua.paymentDate, false));
+    $('#md_proveedor').text(dua.personName || '-');
+    $('#md_docProveedor').text(`${dua.documentType || 'DOC'}: ${dua.personDocumentNumber || ''}`);
+    $('#md_almacen').text(dua.warehouse || '-');
+    $('#md_moneda').text(dua.currency || '-');
+    
+    // Valores
+    $('#md_fob').text(formatoMoneda(dua.fobValue));
+    $('#md_flete').text(formatoMoneda(dua.freightValue));
+    $('#md_seguro').text(formatoMoneda(dua.insuranceValue));
+    $('#md_cif').text(formatoMoneda(dua.cifValue));
+    $('#md_advalorem').text(formatoMoneda(dua.adValoremValue));
+    
+    // CAMBIO: Percepción en lugar de ISC
+    $('#md_percepcion').text(formatoMoneda(dua.perceptionRate)); 
+    
+    $('#md_ipm').text(formatoMoneda(dua.ipmValue));
+    $('#md_igv').text(formatoMoneda(dua.igvValue));
+    $('#md_total').text(formatoMoneda(dua.total));
+
+    // Tabla Relacionadas
+    const $tbody = $('#md_tablaRelacionadas');
+    $tbody.empty();
+
+    if (dua.relatedPurchases && dua.relatedPurchases.length > 0) {
+        dua.relatedPurchases.forEach(rel => {
+            const fecha = formatearFechaPeru(rel.issueDate, false);
+            
+            // Botón que abre el modal detalle normal para esta compra específica
+            const btnVer = `<button class="btn-action" onclick="abrirModalDetalle('${rel.id}', 'PURCHASE')"><i class='bx bx-show'></i></button>`;
+            
+            const row = `
+                <tr>
+                    <td>${fecha}</td>
+                    <td><strong>${rel.voucherNumber}</strong></td>
+                    <td>${rel.personName || '-'}</td>
+                    <td class="text-right">${formatoMoneda(rel.total)}</td>
+                    <td class="text-center">${btnVer}</td>
+                </tr>
+            `;
+            $tbody.append(row);
+        });
+    } else {
+        $tbody.html('<tr><td colspan="5" class="text-center" style="padding:15px; color:#777;">No hay facturas relacionadas.</td></tr>');
+    }
 }
 
 $(window).click(function(e) { if ($(e.target).hasClass('modal-overlay')) { const id = $(e.target).attr('id'); const modalesBloqueados = ['modalNuevaCompra', 'modalCrearProducto', 'modalCrearProveedor', 'modalNuevaCategoria', 'modalDatosNoDomiciliado']; if(modalesBloqueados.includes(id)) { return; } $(e.target).fadeOut(200); } });
