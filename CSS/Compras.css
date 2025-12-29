@@ -343,7 +343,7 @@ a {
 }
 
 /* ANCHO FIJO PARA LA FECHA */
-.th-date-fixed {
+.th-fixed-date {
     width: 180px; 
     min-width: 180px;
 }

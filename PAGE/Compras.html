@@ -74,8 +74,8 @@
         <table class="tabla-datos">
             <thead>
                 <tr>
-                    <th class="th-sortable th-date-fixed" id="thFecha" onclick="alternarOrdenFecha()" title="Clic para cambiar orden">
-                        FECHA <i class='bx bx-sort-alt-2'></i>
+                    <th class="th-sortable th-fixed-date" id="thFecha" onclick="alternarOrdenFecha()" title="Clic para cambiar orden">
+                        FECHA EMISIÓN <i class='bx bx-sort-alt-2'></i>
                     </th>
                     <th>ALMACÉN</th>
                     <th>DOCUMENTO</th>
@@ -180,7 +180,7 @@
 <div id="modalDetalleDua" class="modal-overlay modal-dua-layer">
     <div class="modal-content modal-lg">
         <div class="modal-header">
-            <h3><i class='bx bxs-ship'></i> Detalles de DUA/DAM</h3>
+            <h3><i class='bx bx-detail'></i> Detalles de Compras</h3>
             <span class="close-modal" onclick="cerrarModal('modalDetalleDua')">&times;</span>
         </div>
         <div class="modal-body">
@@ -194,8 +194,8 @@
                     <div class="info-item">
                         <label>DOCUMENTO</label>
                         <div class="doc-badge">
-                            <span id="md_tipoDoc" class="badge-dark">DUA/DAM</span>
-                            <span id="md_numero" class="badge-number-modal">-</span>
+                            <span id="md_tipoDoc" class="badge-dark">-</span>
+                            <span id="md_numero" class="badge-number-modal md-text">-</span>
                         </div>
                     </div>
                     <div class="info-item"><label>FECHA PAGO</label><p id="md_fechaPago">-</p></div>
@@ -212,7 +212,7 @@
                     <div class="info-item"><label>FOB</label><p id="md_fob">0.00</p></div>
                     <div class="info-item"><label>FLETE</label><p id="md_flete">0.00</p></div>
                     <div class="info-item"><label>SEGURO</label><p id="md_seguro">0.00</p></div>
-                    <div class="info-item"><label>VALOR CIF</label><p id="md_cif">0.00</p></div>
+                    <div class="info-item"><label>VALOR CIF</label><p id="md_cif" class="font-bold">0.00</p></div>
                     
                     <div class="info-item"><label>AD VALOREM</label><p id="md_advalorem">0.00</p></div>
                     <div class="info-item"><label>PERCEPCIÓN</label><p id="md_percepcion">0.00</p></div>

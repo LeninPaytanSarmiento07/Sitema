@@ -26,9 +26,9 @@ let warehouseId = "";
 let startDate = "";
 let endDate = "";
 
-// LÓGICA DE ORDENAMIENTO (0: Default, 1: Emission, 2: Created)
-let sortState = 0; 
-let sortBy = ""; 
+// LÓGICA DE ORDENAMIENTO (1: Emission, 2: Created)
+let sortState = 1; // Inicia en Emisión
+let sortBy = "IssueDate"; 
 
 let cachedIgvOptions = ""; 
 let igvListCache = []; 
@@ -189,25 +189,14 @@ $(document).ready(function() {
 });
 
 function alternarOrdenFecha() {
-    sortState++;
-    if (sortState > 2) sortState = 0; 
-
-    const $th = $('#thFecha');
-    const $icon = $th.find('i');
-
-    $th.removeClass('active');
-    
-    if (sortState === 0) {
-        sortBy = ""; 
-        $th.html('FECHA <i class="bx bx-sort-alt-2"></i>');
-    } else if (sortState === 1) {
-        sortBy = "IssueDate"; 
-        $th.html('FECHA EMISIÓN <i class="bx bx-down-arrow-alt"></i>');
-        $th.addClass('active');
-    } else if (sortState === 2) {
-        sortBy = "CreatedDate"; 
-        $th.html('FECHA REGISTRO <i class="bx bx-down-arrow-alt"></i>');
-        $th.addClass('active');
+    if (sortState === 1) {
+        sortState = 2;
+        sortBy = "CreatedDate"; // Fecha Registro
+        $('#thFecha').html('FECHA REGISTRO <i class="bx bx-time-five"></i>');
+    } else {
+        sortState = 1;
+        sortBy = "IssueDate"; // Fecha Emisión
+        $('#thFecha').html('FECHA EMISIÓN <i class="bx bx-calendar"></i>');
     }
 
     currentPage = 1;
