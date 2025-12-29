@@ -1,7 +1,9 @@
 const API_BASE = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api";
 
 // ENDPOINTS
-const EP_PURCHASE = `${API_BASE}/Purchase`;
+const EP_PURCHASE = `${API_BASE}/Purchase`; // Se mantiene para el registro (POST)
+const EP_PURCHASE_LIST = `${API_BASE}/PurchaseDocument`; // Endpoint para el listado (GET)
+
 // Nuevo endpoint para No Domiciliados
 const EP_PURCHASE_NON_DOMICILED = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api/Purchase/non-domiciled";
 // Nuevo endpoint para DUA
@@ -315,9 +317,13 @@ async function loadWarehouses() {
 async function fetchCompras(page) {
     const $tbody = $('#comprasBody'); $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">Cargando...</td></tr>');
     try {
-        const url = `${EP_PURCHASE}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
-        const response = await fetch(url); const data = await response.json();
-        $tbody.empty(); const items = data.items || [];
+        // Usamos el endpoint de listado
+        const url = `${EP_PURCHASE_LIST}?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${searchTerm}&warehouseId=${warehouseId}&startDate=${startDate}&endDate=${endDate}`;
+        const response = await fetch(url); 
+        const data = await response.json();
+        $tbody.empty(); 
+        const items = data.items || [];
+        
         if (items.length === 0) { $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">No se encontraron resultados.</td></tr>'); return; }
         
         items.forEach((compra) => {
@@ -442,8 +448,20 @@ async function abrirModalNuevaCompra() {
     cargarDropdown(EP_WAREHOUSE, 'nc_almacen');
     
     await cargarDropdown(EP_VOUCHER, 'nc_tipoDoc');
+    
+    // ===============================================
+    // LÓGICA DE BLOQUEO DE OPCIONES (BOLETA / DUA)
+    // ===============================================
     $('#nc_tipoDoc option').each(function() {
-        if($(this).text().toLowerCase().includes('boleta')) {
+        const text = $(this).text().toLowerCase();
+        
+        // Bloquear Boleta
+        if(text.includes('boleta')) {
+            $(this).prop('disabled', true);
+        }
+        
+        // CAMBIO SOLICITADO: Deshabilitar DUA y DAM
+        if(text.includes('dua') || text.includes('dam')) {
             $(this).prop('disabled', true);
         }
     });
@@ -765,7 +783,7 @@ function guardarCompra() {
     fetch(urlToUse, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevaCompra) })
     .then(async res => {
         let data = null;
-        try { data = await res.json(); } catch(e) {}
+        try { data = await res.json(); } catch(e){}
         if (res.ok) { 
             toastr.success(data?.message || "Compra registrada correctamente"); 
             cerrarModal('modalNuevaCompra'); 
