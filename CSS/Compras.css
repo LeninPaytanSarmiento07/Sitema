@@ -916,32 +916,85 @@ a {
 }
 
 /* =========================================
-   12. ESTILOS DETALLE DUA (DESGLOSE)
+   12. ESTILOS DETALLE DUA (DESGLOSE) - NUEVO FORMATO
    ========================================= */
 .dua-breakdown-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
+    grid-template-columns: repeat(3, 1fr); /* 3 COLUMNAS */
+    gap: 20px;
     background: #f9fafb;
-    padding: 15px;
-    border-radius: 6px;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
 }
 
-.dua-final-total {
-    text-align: right;
-    margin-top: 15px;
+.dua-col {
+    display: flex;
+    flex-direction: column;
 }
 
-.total-label {
-    font-size: 18px;
-    font-weight: 800;
-    margin-right: 10px;
-}
-
-.total-amount {
-    font-size: 20px;
-    font-weight: 800;
+.dua-section-title {
+    font-size: 14px;
+    font-weight: 700;
     color: #3d4f5d;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.dua-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #555;
+    align-items: baseline;
+}
+
+.dua-val {
+    font-weight: 600;
+    color: #222;
+}
+
+.dua-item-bold {
+    margin-top: 5px;
+    font-weight: 700;
+    color: #000;
+}
+.dua-item-bold .dua-val {
+    font-weight: 800;
+}
+
+.dua-item-subtotal {
+    margin-top: 8px;
+    border-top: 1px dashed #ccc;
+    padding-top: 8px;
+    font-weight: 700;
+}
+
+.dua-item-total {
+    margin-top: 10px;
+    border-top: 2px solid #ddd;
+    padding-top: 10px;
+    font-weight: 800;
+    color: #000;
+    font-size: 14px;
+}
+
+.dua-item-grand-total {
+    margin-top: 15px;
+    background-color: #3d4f5d;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 15px;
+    display: flex;
+    justify-content: space-between;
+}
+.dua-item-grand-total .dua-val {
+    color: white;
 }
 
 /* Clases de utilidad */

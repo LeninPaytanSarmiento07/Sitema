@@ -206,25 +206,37 @@
 
                 <hr class="divider">
                 
-                <h4 class="section-title">Desglose de Importación</h4>
-                
                 <div class="dua-breakdown-container">
-                    <div class="info-item"><label>FOB</label><p id="md_fob">0.00</p></div>
-                    <div class="info-item"><label>FLETE</label><p id="md_flete">0.00</p></div>
-                    <div class="info-item"><label>SEGURO</label><p id="md_seguro">0.00</p></div>
-                    <div class="info-item"><label>VALOR CIF</label><p id="md_cif" class="font-bold">0.00</p></div>
                     
-                    <div class="info-item"><label>AD VALOREM</label><p id="md_advalorem">0.00</p></div>
-                    <div class="info-item"><label>PERCEPCIÓN</label><p id="md_percepcion">0.00</p></div>
-                    <div class="info-item"><label>IPM</label><p id="md_ipm">0.00</p></div>
-                    <div class="info-item"><label>IGV</label><p id="md_igv">0.00</p></div>
-                </div>
-                
-                <div class="dua-final-total">
-                    <span class="total-label">TOTAL DUA:</span>
-                    <span id="md_total" class="total-amount">0.00</span>
-                </div>
+                    <div class="dua-col">
+                        <h5 class="dua-section-title">Valorización de Importación</h5>
+                        <div class="dua-item"><span>Valor FOB (mercancía):</span><span id="val_fob" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item"><span>Flete internacional:</span><span id="val_flete" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item"><span>Seguro internacional:</span><span id="val_seguro" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item dua-item-bold"><span>Valor CIF:</span><span id="val_cif" class="dua-val">$ 0.00</span></div>
+                    </div>
 
+                    <div class="dua-col">
+                        <h5 class="dua-section-title">Tributos Aduaneros (Pago a SUNAT)</h5>
+                        <div class="dua-item"><span>Ad Valorem:</span><span id="trib_advalorem" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item"><span>IPM (2%):</span><span id="trib_ipm" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item"><span>IGV (16%):</span><span id="trib_igv" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item dua-item-subtotal"><span>Subtotal Tributos:</span><span id="trib_subtotal" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item"><span id="trib_label_percepcion">Percepción IGV (0%):</span><span id="trib_percepcion" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item dua-item-total"><span>Total a pagar SUNAT:</span><span id="trib_total_sunat" class="dua-val">$ 0.00</span></div>
+                    </div>
+
+                    <div class="dua-col">
+                        <h5 class="dua-section-title">Resumen Total</h5>
+                        <div class="dua-item"><span>Costo CIF (proveedor):</span><span id="res_cif" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item"><span>Tributos (SUNAT):</span><span id="res_tributos" class="dua-val">$ 0.00</span></div>
+                        <div class="dua-item dua-item-grand-total">
+                            <span>COSTO TOTAL NACIONALIZACIÓN:</span>
+                            <span id="res_total_final" class="dua-val">$ 0.00</span>
+                        </div>
+                    </div>
+
+                </div>
                 <hr class="divider">
 
                 <h4 class="section-title"><i class='bx bx-link'></i> Facturas Relacionadas</h4>

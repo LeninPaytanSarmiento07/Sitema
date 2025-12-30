@@ -925,52 +925,48 @@ async function abrirModalDetalle(id, source) {
 }
 
 function renderDuaDetails(dua) {
-    // Cabecera MODIFICADA: Igualar diseño a modal de compras
-    // Usamos el id md_tipoDoc para el badge oscuro y md_numero para el badge claro
+    // 1. Cabecera (igual)
     $('#md_tipoDoc').text(dua.voucherType || 'DUA/DAM'); 
     $('#md_numero').text(dua.voucherNumber || '-');
-    
     $('#md_fechaPago').text(formatearFechaPeru(dua.paymentDate, false));
     $('#md_proveedor').text(dua.personName || '-');
     $('#md_docProveedor').text(`${dua.documentType || 'DOC'}: ${dua.personDocumentNumber || ''}`);
     $('#md_almacen').text(dua.warehouse || '-');
     $('#md_moneda').text(dua.currency || '-');
     
-    // Valores
-    $('#md_fob').text(formatoMoneda(dua.fobValue));
-    $('#md_flete').text(formatoMoneda(dua.freightValue));
-    $('#md_seguro').text(formatoMoneda(dua.insuranceValue));
-    $('#md_cif').text(formatoMoneda(dua.cifValue));
-    $('#md_advalorem').text(formatoMoneda(dua.adValoremValue));
+    // 2. NUEVA SECCIÓN: Valorización de Importación
+    $('#val_fob').text(`$ ${formatoMoneda(dua.fobValue)}`);
+    $('#val_flete').text(`$ ${formatoMoneda(dua.freightValue)}`);
+    $('#val_seguro').text(`$ ${formatoMoneda(dua.insuranceValue)}`);
+    $('#val_cif').text(`$ ${formatoMoneda(dua.cifValue)}`);
     
-    // CAMBIO: Percepción en lugar de ISC
-    $('#md_percepcion').text(formatoMoneda(dua.perceptionRate)); 
+    // 3. NUEVA SECCIÓN: Tributos Aduaneros
+    $('#trib_advalorem').text(`$ ${formatoMoneda(dua.adValoremValue)}`);
+    $('#trib_ipm').text(`$ ${formatoMoneda(dua.ipmValue)}`);
+    $('#trib_igv').text(`$ ${formatoMoneda(dua.igvValue)}`);
+    $('#trib_subtotal').text(`$ ${formatoMoneda(dua.taxSubTotal)}`);
     
-    $('#md_ipm').text(formatoMoneda(dua.ipmValue));
-    $('#md_igv').text(formatoMoneda(dua.igvValue));
-    $('#md_total').text(formatoMoneda(dua.total));
+    // Percepción dinámica
+    const percRate = dua.perceptionRate || 0;
+    $('#trib_label_percepcion').text(`Percepción IGV (${percRate}%):`);
+    $('#trib_percepcion').text(`$ ${formatoMoneda(dua.perceptionAmount)}`);
+    
+    $('#trib_total_sunat').text(`$ ${formatoMoneda(dua.totalTaxes)}`);
 
-    // Tabla Relacionadas
+    // 4. NUEVA SECCIÓN: Resumen Total
+    $('#res_cif').text(`$ ${formatoMoneda(dua.cifValue)}`); // Costo CIF (proveedor)
+    $('#res_tributos').text(`$ ${formatoMoneda(dua.totalTaxes)}`); // Tributos (SUNAT)
+    $('#res_total_final').text(`$ ${formatoMoneda(dua.total)}`); // COSTO TOTAL NACIONALIZACIÓN
+
+    // 5. Tabla Relacionadas (igual)
     const $tbody = $('#md_tablaRelacionadas');
     $tbody.empty();
 
     if (dua.relatedPurchases && dua.relatedPurchases.length > 0) {
         dua.relatedPurchases.forEach(rel => {
             const fecha = formatearFechaPeru(rel.issueDate, false);
-            
-            // Botón que abre el modal detalle normal para esta compra específica
             const btnVer = `<button class="btn-action" onclick="abrirModalDetalle('${rel.id}', 'PURCHASE')"><i class='bx bx-show'></i></button>`;
-            
-            const row = `
-                <tr>
-                    <td>${fecha}</td>
-                    <td><strong>${rel.voucherNumber}</strong></td>
-                    <td>${rel.personName || '-'}</td>
-                    <td class="text-right">${formatoMoneda(rel.total)}</td>
-                    <td class="text-center">${btnVer}</td>
-                </tr>
-            `;
-            $tbody.append(row);
+            $tbody.append(`<tr><td>${fecha}</td><td><strong>${rel.voucherNumber}</strong></td><td>${rel.personName || '-'}</td><td class="text-right">${formatoMoneda(rel.total)}</td><td class="text-center">${btnVer}</td></tr>`);
         });
     } else {
         $tbody.html('<tr><td colspan="5" class="text-center" style="padding:15px; color:#777;">No hay facturas relacionadas.</td></tr>');
