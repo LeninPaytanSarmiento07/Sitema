@@ -6,7 +6,8 @@ const EP_PURCHASE_LIST = `${API_BASE}/PurchaseDocument`;
 const EP_DUA_DETAIL = `${API_BASE}/Dua`; 
 
 const EP_PURCHASE_NON_DOMICILED = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api/Purchase/non-domiciled";
-const EP_PURCHASE_DUA = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api/Purchase/dua";
+// ACTUALIZADO: Endpoint correcto para crear DUA
+const EP_PURCHASE_DUA = `${API_BASE}/Dua`;
 
 const EP_WAREHOUSE = `${API_BASE}/Warehouse/select`; 
 const EP_VOUCHER = `${API_BASE}/VoucherType/select`; 
@@ -27,7 +28,7 @@ let startDate = "";
 let endDate = "";
 
 // LÓGICA DE ORDENAMIENTO (1: Emission, 2: Created)
-let sortState = 1; // Inicia en Emisión
+let sortState = 1; 
 let sortBy = "IssueDate"; 
 
 let cachedIgvOptions = ""; 
@@ -38,6 +39,11 @@ let searchTimer = null;
 let tempNdSerie = "";
 let tempNdAnio = "";
 let tempNdNumero = "";
+
+// VARIABLES PARA NO DOMICILIADOS
+let duaRelatedPurchases = []; 
+let cachedNoDomList = [];     
+let isFetchingNoDom = false;  
 
 toastr.options = {
     "closeButton": true, "debug": false, "newestOnTop": false, "progressBar": true,
@@ -66,12 +72,19 @@ $(document).ready(function() {
         searchTimer = setTimeout(() => { searchTerm = val; currentPage = 1; fetchCompras(currentPage); }, 300); 
     });
 
-    $('#warehouseSelect').on('change', function() { warehouseId = $(this).val(); currentPage = 1; fetchCompras(currentPage); });
+    $('#warehouseSelect').on('change', function() { 
+        warehouseId = $(this).val(); 
+        currentPage = 1; 
+        fetchCompras(currentPage); 
+    });
 
     // BUSCADORES EN MODAL
     $('#nc_buscarProveedor').on('input focus', function() { buscarPersona($(this).val()); });
     $('#nc_buscarProducto').on('input focus', function() { buscarProducto($(this).val()); });
     
+    // Buscador de facturas no domiciliadas (Filtro Local)
+    $('#dua_buscarNoDom').on('input focus', function() { filtrarNoDomiciliadasLocal($(this).val()); });
+
     $('#btnLimpiarProveedor').click(function() {
         $('#nc_buscarProveedor').val('').focus();
         $('#nc_idProveedor').val('');
@@ -100,14 +113,46 @@ $(document).ready(function() {
         $('#error_nprov_numeroDoc').removeClass('show');
     });
 
+    $('#nc_almacen').on('change', function() {
+        const val = $(this).val();
+        $('#nc_tablaProductos').empty();
+        $('#nc_buscarProducto').val('');
+        calcularTotalesGlobales();
+
+        const docType = $('#nc_tipoDoc option:selected').text().toLowerCase();
+        if((docType.includes("dua") || docType.includes("dam")) && val) {
+            cargarCacheNoDomiciliadas(val);
+        } else {
+            $('#dua_buscarNoDom').prop('disabled', true).attr('placeholder', 'Seleccione almacén primero...');
+            cachedNoDomList = [];
+        }
+    });
+
     $('#nc_tipoDoc').on('change', function() {
         const selectedText = $(this).find("option:selected").text().toLowerCase();
         
         const isNoDomiciliado = selectedText.includes("no domiciliado");
+        const isDua = selectedText.includes("dua") || selectedText.includes("dam");
+
         const $serie = $('#nc_serie');
         const $numero = $('#nc_numero');
         const $errorSerie = $('#error_nc_serie');
         const $errorNumero = $('#error_nc_numero');
+
+        if(isDua) {
+            $serie.attr('maxlength', '3');
+            $serie.attr('placeholder', '118');
+            $errorSerie.text('3 dígitos obligatorios');
+            
+            const whId = $('#nc_almacen').val();
+            if(whId) {
+                cargarCacheNoDomiciliadas(whId);
+            }
+        } else {
+            $serie.attr('maxlength', '4');
+            $serie.attr('placeholder', 'F001');
+            $errorSerie.text('4 dígitos obligatorios');
+        }
 
         if (isNoDomiciliado) {
             $serie.prop('disabled', true).val('').removeClass('error').css('background-color', '#e9ecef');
@@ -125,7 +170,6 @@ $(document).ready(function() {
             $('#btnNoDomData').addClass('hidden');
         }
 
-        const isDua = selectedText.includes("dua") || selectedText.includes("dam");
         if(isDua) {
             $('#sectionProductos').hide(); 
             $('#sectionDatosDua').show();
@@ -191,20 +235,19 @@ $(document).ready(function() {
 function alternarOrdenFecha() {
     if (sortState === 1) {
         sortState = 2;
-        sortBy = "CreatedDate"; // Fecha Registro
+        sortBy = "CreatedDate"; 
         $('#thFecha').html('FECHA REGISTRO <i class="bx bx-time-five"></i>');
     } else {
         sortState = 1;
-        sortBy = "IssueDate"; // Fecha Emisión
+        sortBy = "IssueDate"; 
         $('#thFecha').html('FECHA EMISIÓN <i class="bx bx-calendar"></i>');
     }
-
     currentPage = 1;
     fetchCompras(currentPage);
 }
 
 function calculateDuaBaseSum() {
-    const ids = ['dua_fob', 'dua_flete', 'dua_seguro', 'dua_advalorem', 'dua_isc'];
+    const ids = ['dua_fob', 'dua_flete', 'dua_seguro', 'dua_advalorem'];
     let sum = 0;
     ids.forEach(id => {
         sum += parseFloat($(`#${id}`).val()) || 0;
@@ -214,7 +257,6 @@ function calculateDuaBaseSum() {
 
 function calcularDuaTotals() {
     const base = calculateDuaBaseSum();
-    const noGravado = parseFloat($('#dua_noGravado').val()) || 0;
     
     const ipm = base * 0.02; 
     const igv = base * 0.16; 
@@ -224,10 +266,10 @@ function calcularDuaTotals() {
 
     const subtotal = base;
     const totalIgv = igv + ipm;
-    const total = subtotal + totalIgv + noGravado;
+    const total = subtotal + totalIgv; 
 
     $('#txtDuaSubtotal').val(formatoMoneda(subtotal));
-    $('#txtDuaNoGravado').val(formatoMoneda(noGravado));
+    $('#txtDuaNoGravado').val(formatoMoneda(0)); 
     $('#txtDuaIgv').val(formatoMoneda(totalIgv));
     $('#txtDuaTotal').val(formatoMoneda(total));
     $('#txtDuaPercepcion').val("0.00"); 
@@ -386,6 +428,15 @@ function limpiarFormularioCompra() {
     $('#txtDuaTotal').val('0.00');
     $('#txtDuaPercepcion').val('0.00');
     
+    duaRelatedPurchases = [];
+    cachedNoDomList = [];
+    isFetchingNoDom = false;
+    
+    $('#listaNoDom').hide();
+    $('#dua_buscarNoDom').val('');
+    $('#dua_buscarNoDom').prop('disabled', true).attr('placeholder', 'Seleccione almacén primero...');
+    renderSelectedNoDom();
+
     document.getElementById('nc_fecha').valueAsDate = new Date();
 
     $('#btnLimpiarProveedor').hide();
@@ -422,9 +473,6 @@ async function abrirModalNuevaCompra() {
     $('#nc_tipoDoc option').each(function() {
         const text = $(this).text().toLowerCase();
         if(text.includes('boleta')) {
-            $(this).prop('disabled', true);
-        }
-        if(text.includes('dua') || text.includes('dam')) {
             $(this).prop('disabled', true);
         }
     });
@@ -478,6 +526,111 @@ function seleccionarProveedor(id, nombre, tipoDoc, numDoc) {
     $('#listaProveedores').hide();
     $('#nc_buscarProveedor').removeClass('error'); $('#error_nc_proveedor').removeClass('show');
 }
+
+// =======================================================
+// NUEVA LÓGICA OPTIMIZADA: CACHÉ + FILTRO LOCAL
+// =======================================================
+
+async function cargarCacheNoDomiciliadas(whId) {
+    if(!whId) return;
+    if(isFetchingNoDom) return; 
+
+    const $input = $('#dua_buscarNoDom');
+    
+    try {
+        isFetchingNoDom = true;
+        $input.prop('disabled', true).attr('placeholder', 'Cargando facturas...');
+        
+        const url = `${API_BASE}/Purchase/non-domiciled-for-dua?warehouseId=${whId}`;
+        const res = await fetch(url);
+        
+        if(!res.ok) throw new Error("Error al cargar facturas");
+        
+        cachedNoDomList = await res.json();
+        
+        $input.prop('disabled', false).attr('placeholder', 'Buscar factura no domiciliada...');
+        
+    } catch (e) {
+        console.error(e);
+        $input.attr('placeholder', 'Error al cargar datos');
+        toastr.error("No se pudieron cargar las facturas no domiciliadas");
+    } finally {
+        isFetchingNoDom = false;
+    }
+}
+
+function filtrarNoDomiciliadasLocal(texto) {
+    const $list = $('#listaNoDom'); 
+    
+    if (!cachedNoDomList || cachedNoDomList.length === 0) {
+        $list.hide();
+        return;
+    }
+    
+    $list.empty();
+    
+    let items = cachedNoDomList;
+    if(texto && texto.trim().length > 0) {
+        const t = texto.toLowerCase();
+        items = cachedNoDomList.filter(d => 
+            (d.personName && d.personName.toLowerCase().includes(t)) || 
+            (d.personDocumentNumber && d.personDocumentNumber.includes(t)) ||
+            (d.voucherNumber && d.voucherNumber.includes(t))
+        );
+    }
+
+    if (items.length > 0) {
+        $list.show();
+        items.forEach(p => {
+            if(duaRelatedPurchases.some(sel => sel.id === p.id)) return;
+
+            const itemHtml = `
+            <div class="autocomplete-item" onclick='seleccionarCompraNoDom(${JSON.stringify(p)})'>
+                <div class="item-info-clickable" style="width:100%">
+                    <div style="font-weight: 600; color: #333; font-size: 13px;">${p.personName}</div>
+                    <div style="color: #666; font-size: 11px; margin-top: 2px;">Doc: ${p.personDocumentNumber} | Comp: ${p.voucherNumber}</div>
+                </div>
+            </div>`;
+            $list.append(itemHtml);
+        });
+    } else {
+        $list.hide();
+    }
+}
+
+function seleccionarCompraNoDom(obj) {
+    duaRelatedPurchases.push(obj);
+    $('#dua_buscarNoDom').val('').focus();
+    $('#listaNoDom').hide();
+    filtrarNoDomiciliadasLocal('');
+    renderSelectedNoDom();
+}
+
+function renderSelectedNoDom() {
+    const $container = $('#dua_selected_list');
+    $container.empty();
+    
+    duaRelatedPurchases.forEach((p, index) => {
+        const row = `
+        <div class="nodom-item">
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-weight:600; color:#333; font-size:13px;">${p.personName}</span>
+                <span style="color:#666; font-size:12px;">Doc: ${p.personDocumentNumber} | Comp: ${p.voucherNumber}</span>
+            </div>
+            <button class="btn-trash-red" onclick="removerCompraNoDom(${index})" title="Eliminar">
+                <i class='bx bx-trash'></i>
+            </button>
+        </div>`;
+        $container.append(row);
+    });
+}
+
+function removerCompraNoDom(index) {
+    duaRelatedPurchases.splice(index, 1);
+    renderSelectedNoDom();
+}
+
+// -------------------------------------------------------
 
 async function buscarProducto(texto) {
     const $list = $('#listaProductos'); 
@@ -606,10 +759,16 @@ function guardarCompra() {
     const isDua = tipoDocText.includes("dua") || tipoDocText.includes("dam");
 
     const serie = $('#nc_serie').val().trim();
-    if (!isNoDomiciliado) {
+    if (isDua) {
+        if(serie.length !== 3) { 
+            $('#nc_serie').addClass('error'); 
+            $('#error_nc_serie').text('3 dígitos obligatorios').addClass('show'); 
+            isValid = false; 
+        }
+    } else if (!isNoDomiciliado) {
         if(serie.length !== 4) { 
             $('#nc_serie').addClass('error'); 
-            $('#error_nc_serie').addClass('show'); 
+            $('#error_nc_serie').text('4 dígitos obligatorios').addClass('show'); 
             isValid = false; 
         }
     }
@@ -655,33 +814,40 @@ function guardarCompra() {
             }
         });
 
+        if(duaRelatedPurchases.length === 0) {
+            toastr.error("Debe vincular al menos una factura no domiciliada.");
+            $('#dua_buscarNoDom').addClass('error');
+            $('#error_dua_nodom').addClass('show');
+            duaValid = false;
+        }
+
         if (!duaValid) {
-            toastr.error("Para DUA/DAM, complete los campos de importación obligatorios.");
+            toastr.error("Complete los campos obligatorios de la DUA.");
             $btn.prop('disabled', false).html(originalText);
             return;
         }
 
+        const relatedIds = duaRelatedPurchases.map(p => p.id);
+
+        // NUEVO FORMATO PLANO CON STRINGS
         const payloadDua = {
             warehouseId: $('#nc_almacen').val(),
-            voucherTypeId: $('#nc_tipoDoc').val(),
             currencyId: $('#nc_moneda').val(),
             personId: $('#nc_idProveedor').val(),
             serie: payloadSerie,
+            duaYear: ($('#dua_anio').val() || new Date().getFullYear()).toString(),
             number: numero,
             issueDate: $('#nc_fecha').val(),
-            dua: {
-                paymentDate: $('#dua_fechaPago').val(),
-                perceptionRate: parseFloat($('#dua_percepcion').val()) || 0,
-                duaYear: parseInt($('#dua_anio').val()) || 2025,
-                fobValue: parseFloat($('#dua_fob').val()) || 0,
-                freightValue: parseFloat($('#dua_flete').val()) || 0,
-                insuranceValue: parseFloat($('#dua_seguro').val()) || 0,
-                adValoremValue: parseFloat($('#dua_advalorem').val()) || 0,
-                iscValue: parseFloat($('#dua_isc').val()) || 0,
-                nonTaxableAmount: parseFloat($('#dua_noGravado').val()) || 0
-            }
+            paymentDate: $('#dua_fechaPago').val(),
+            perceptionRate: (parseFloat($('#dua_percepcion').val()) || 0).toString(), 
+            fobValue: (parseFloat($('#dua_fob').val()) || 0).toFixed(3),
+            freightValue: (parseFloat($('#dua_flete').val()) || 0).toFixed(3),
+            insuranceValue: (parseFloat($('#dua_seguro').val()) || 0).toFixed(3),
+            adValoremValue: (parseFloat($('#dua_advalorem').val()) || 0).toFixed(3),
+            relatedPurchaseIds: relatedIds
         };
 
+        // SE USA EL ENDPOINT CORREGIDO: /api/Dua
         fetch(EP_PURCHASE_DUA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadDua) })
         .then(async res => {
             const data = await res.json().catch(() => ({}));
@@ -934,6 +1100,9 @@ function renderDuaDetails(dua) {
     $('#md_almacen').text(dua.warehouse || '-');
     $('#md_moneda').text(dua.currency || '-');
     
+    // NUEVO: Fecha Registro
+    $('#md_fechaRegistro').text(formatearFechaPeru(dua.createdDate || dua.issueDate, true));
+
     // 2. NUEVA SECCIÓN: Valorización de Importación
     $('#val_fob').text(`$ ${formatoMoneda(dua.fobValue)}`);
     $('#val_flete').text(`$ ${formatoMoneda(dua.freightValue)}`);

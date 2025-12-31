@@ -625,6 +625,11 @@ a {
 
 #nc_buscarProveedor { width: 100%; padding-right: 35px; text-overflow: ellipsis; }
 
+/* REGLA AGREGADA PARA FORZAR ANCHO DEL BUSCADOR */
+#dua_buscarNoDom {
+    width: 100% !important;
+}
+
 .clear-autocomplete {
     position: absolute;
     right: 10px;
@@ -1007,3 +1012,38 @@ a {
 .z-2200 { z-index: 2200; }
 .z-2300 { z-index: 2300; }
 .z-2500 { z-index: 2500; }
+
+/* NUEVO: TAGS/ITEMS PARA FACTURAS SELECCIONADAS */
+.nodom-item {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 10px 15px; 
+    border: 1px solid #eee; 
+    margin-top: 5px; 
+    background: #e0e0e0; 
+    border-radius: 15px;
+    transition: background 0.2s;
+    width: 100%;
+}
+.nodom-item:hover {
+    background-color: #d5d5d5;
+}
+
+.btn-trash-red {
+    width: 28px; 
+    height: 28px; 
+    border: 1px solid #ef4444; 
+    border-radius: 4px;
+    background: white; 
+    color: #ef4444; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    transition: 0.2s;
+}
+.btn-trash-red:hover { 
+    background: #ef4444;
+    color: white; 
+}
