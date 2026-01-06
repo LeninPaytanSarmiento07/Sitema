@@ -6,8 +6,6 @@ const EP_PURCHASE_LIST = `${API_BASE}/PurchaseDocument`;
 const EP_DUA_DETAIL = `${API_BASE}/Dua`; 
 
 const EP_PURCHASE_NON_DOMICILED = "https://posapi2025new-augrc0eshqgfgrcf.canadacentral-01.azurewebsites.net/api/Purchase/non-domiciled";
-// ACTUALIZADO: Endpoint correcto para crear DUA
-const EP_PURCHASE_DUA = `${API_BASE}/Dua`;
 
 const EP_WAREHOUSE = `${API_BASE}/Warehouse/select`; 
 const EP_VOUCHER = `${API_BASE}/VoucherType/select`; 
@@ -39,11 +37,6 @@ let searchTimer = null;
 let tempNdSerie = "";
 let tempNdAnio = "";
 let tempNdNumero = "";
-
-// VARIABLES PARA NO DOMICILIADOS
-let duaRelatedPurchases = []; 
-let cachedNoDomList = [];     
-let isFetchingNoDom = false;  
 
 toastr.options = {
     "closeButton": true, "debug": false, "newestOnTop": false, "progressBar": true,
@@ -82,9 +75,6 @@ $(document).ready(function() {
     $('#nc_buscarProveedor').on('input focus', function() { buscarPersona($(this).val()); });
     $('#nc_buscarProducto').on('input focus', function() { buscarProducto($(this).val()); });
     
-    // Buscador de facturas no domiciliadas (Filtro Local)
-    $('#dua_buscarNoDom').on('input focus', function() { filtrarNoDomiciliadasLocal($(this).val()); });
-
     $('#btnLimpiarProveedor').click(function() {
         $('#nc_buscarProveedor').val('').focus();
         $('#nc_idProveedor').val('');
@@ -114,45 +104,23 @@ $(document).ready(function() {
     });
 
     $('#nc_almacen').on('change', function() {
-        const val = $(this).val();
         $('#nc_tablaProductos').empty();
         $('#nc_buscarProducto').val('');
         calcularTotalesGlobales();
-
-        const docType = $('#nc_tipoDoc option:selected').text().toLowerCase();
-        if((docType.includes("dua") || docType.includes("dam")) && val) {
-            cargarCacheNoDomiciliadas(val);
-        } else {
-            $('#dua_buscarNoDom').prop('disabled', true).attr('placeholder', 'Seleccione almacén primero...');
-            cachedNoDomList = [];
-        }
     });
 
     $('#nc_tipoDoc').on('change', function() {
         const selectedText = $(this).find("option:selected").text().toLowerCase();
-        
         const isNoDomiciliado = selectedText.includes("no domiciliado");
-        const isDua = selectedText.includes("dua") || selectedText.includes("dam");
 
         const $serie = $('#nc_serie');
         const $numero = $('#nc_numero');
         const $errorSerie = $('#error_nc_serie');
         const $errorNumero = $('#error_nc_numero');
 
-        if(isDua) {
-            $serie.attr('maxlength', '3');
-            $serie.attr('placeholder', '118');
-            $errorSerie.text('3 dígitos obligatorios');
-            
-            const whId = $('#nc_almacen').val();
-            if(whId) {
-                cargarCacheNoDomiciliadas(whId);
-            }
-        } else {
-            $serie.attr('maxlength', '4');
-            $serie.attr('placeholder', 'F001');
-            $errorSerie.text('4 dígitos obligatorios');
-        }
+        $serie.attr('maxlength', '4');
+        $serie.attr('placeholder', 'F001');
+        $errorSerie.text('4 dígitos obligatorios');
 
         if (isNoDomiciliado) {
             $serie.prop('disabled', true).val('').removeClass('error').css('background-color', '#e9ecef');
@@ -160,25 +128,12 @@ $(document).ready(function() {
             $numero.attr('maxlength', '20');
             $errorNumero.text('Requerido (Máx 20)'); 
             $('#btnNoDomData').removeClass('hidden');
-            $('#sectionProductos').show();
-            $('#sectionDatosDua').hide();
         } else {
             $serie.prop('disabled', false).css('background-color', '#fff');
             $numero.attr('maxlength', '8');
             $errorNumero.text('Requerido (Máx 8)');
             if($numero.val().length > 8) $numero.val($numero.val().substring(0, 8));
             $('#btnNoDomData').addClass('hidden');
-        }
-
-        if(isDua) {
-            $('#sectionProductos').hide(); 
-            $('#sectionDatosDua').show();
-            $('#btnNoDomData').addClass('hidden'); 
-        } else {
-            if(!isNoDomiciliado) {
-                $('#sectionProductos').show();
-                $('#sectionDatosDua').hide();
-            }
         }
     });
 
@@ -191,14 +146,6 @@ $(document).ready(function() {
 
     $('#nd_serie').on('input', function() { this.value = this.value.replace(/\D/g, '').substring(0,3); });
     $('#nd_numero').on('input', function() { this.value = this.value.replace(/\D/g, '').substring(0,6); });
-
-    $('.dua-calc').on('input blur', function() {
-        if(event.type === 'blur') {
-             const val = parseFloat($(this).val());
-             if(!isNaN(val)) $(this).val(val.toFixed(3));
-        }
-        calcularDuaTotals();
-    });
 
     $('#startDate').on('change', function() {
         startDate = $(this).val();
@@ -246,43 +193,12 @@ function alternarOrdenFecha() {
     fetchCompras(currentPage);
 }
 
-function calculateDuaBaseSum() {
-    const ids = ['dua_fob', 'dua_flete', 'dua_seguro', 'dua_advalorem'];
-    let sum = 0;
-    ids.forEach(id => {
-        sum += parseFloat($(`#${id}`).val()) || 0;
-    });
-    return sum;
-}
-
-function calcularDuaTotals() {
-    const base = calculateDuaBaseSum();
-    
-    const ipm = base * 0.02; 
-    const igv = base * 0.16; 
-    
-    $('#dua_ipm').val(ipm.toFixed(3));
-    $('#dua_igv').val(igv.toFixed(3));
-
-    const subtotal = base;
-    const totalIgv = igv + ipm;
-    const total = subtotal + totalIgv; 
-
-    $('#txtDuaSubtotal').val(formatoMoneda(subtotal));
-    $('#txtDuaNoGravado').val(formatoMoneda(0)); 
-    $('#txtDuaIgv').val(formatoMoneda(totalIgv));
-    $('#txtDuaTotal').val(formatoMoneda(total));
-    $('#txtDuaPercepcion').val("0.00"); 
-}
-
 function llenarComboAnios() {
-    const $sel = $('#dua_anio');
     const $selNd = $('#nd_anio'); 
-    $sel.empty(); $selNd.empty();
+    $selNd.empty();
     const currentYear = new Date().getFullYear(); 
     
     for(let y = currentYear; y >= 2018; y--) {
-        $sel.append(`<option value="${y}">${y}</option>`);
         $selNd.append(`<option value="${y}">${y}</option>`);
     }
 }
@@ -347,7 +263,22 @@ async function fetchCompras(page) {
         if (items.length === 0) { $tbody.html('<tr><td colspan="8" class="text-center" style="padding: 20px;">No se encontraron resultados.</td></tr>'); return; }
         
         items.forEach((compra) => {
-            const fecha = formatearFechaPeru(compra.issueDate, false);
+            // LÓGICA DE CAMBIO DE FECHA SEGÚN EL ORDENAMIENTO
+            let fechaMostrar = "";
+            let mostrarHora = false;
+
+            if (sortBy === "CreatedDate") {
+                // Si ordenamos por fecha de registro (Creación), mostramos createdDate con hora
+                fechaMostrar = compra.createdDate;
+                mostrarHora = true;
+            } else {
+                // Por defecto (IssueDate/Emisión), mostramos issueDate sin hora
+                fechaMostrar = compra.issueDate;
+                mostrarHora = false;
+            }
+
+            const fechaFinal = formatearFechaPeru(fechaMostrar, mostrarHora);
+
             const docNum = compra.personDocumentNumber || '';
             let docLabel = compra.documentType || compra.personDocumentType || 'DOC';
             const serieNumero = compra.voucherNumber || '-';
@@ -356,7 +287,7 @@ async function fetchCompras(page) {
             const source = compra.documentSource || 'PURCHASE';
 
             const row = `<tr>
-                <td style="font-weight: 500;">${fecha}</td>
+                <td style="font-weight: 500;">${fechaFinal}</td>
                 <td style="color: #6b7280;">${compra.warehouse || '-'}</td>
                 <td><span style="background: #1f2937; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">${compra.voucherType || 'Doc'}</span></td>
                 <td><span style="background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid #dbeafe;">${serieNumero}</span></td>
@@ -409,12 +340,6 @@ function limpiarFormularioCompra() {
     $('#nc_idProveedor').val('');
     $('#nc_buscarProducto').val('');
     
-    $('#dua_fechaPago').val('');
-    $('#dua_percepcion').val('');
-    $('.dua-calc').val(''); 
-    $('#dua_ipm').val('');
-    $('#dua_igv').val('');
-    
     tempNdSerie = "";
     tempNdAnio = "";
     tempNdNumero = "";
@@ -422,21 +347,6 @@ function limpiarFormularioCompra() {
     $('#nd_anio').val('');
     $('#nd_numero').val('');
     
-    $('#txtDuaSubtotal').val('0.00');
-    $('#txtDuaNoGravado').val('0.00');
-    $('#txtDuaIgv').val('0.00');
-    $('#txtDuaTotal').val('0.00');
-    $('#txtDuaPercepcion').val('0.00');
-    
-    duaRelatedPurchases = [];
-    cachedNoDomList = [];
-    isFetchingNoDom = false;
-    
-    $('#listaNoDom').hide();
-    $('#dua_buscarNoDom').val('');
-    $('#dua_buscarNoDom').prop('disabled', true).attr('placeholder', 'Seleccione almacén primero...');
-    renderSelectedNoDom();
-
     document.getElementById('nc_fecha').valueAsDate = new Date();
 
     $('#btnLimpiarProveedor').hide();
@@ -453,12 +363,9 @@ function limpiarFormularioCompra() {
     $('#nc_serie').prop('disabled', false).css('background-color', '#fff'); 
     $('#nc_numero').attr('maxlength', '8');
     $('#error_nc_numero').text('Requerido (Máx 8)');
-    
-    $('#sectionProductos').show();
-    $('#sectionDatosDua').hide();
 }
 
-async function abrirModalNuevaCompra() {
+async function abrirModalNuevaCompra(tipoPreseleccionado = null) {
     $('#modalNuevaCompra').css('display', 'flex');
     limpiarFormularioCompra();
     llenarComboAnios(); 
@@ -470,12 +377,29 @@ async function abrirModalNuevaCompra() {
     
     await cargarDropdown(EP_VOUCHER, 'nc_tipoDoc');
     
+    // DESHABILITAR BOLETAS Y DUA/DAM
     $('#nc_tipoDoc option').each(function() {
         const text = $(this).text().toLowerCase();
-        if(text.includes('boleta')) {
+        if(text.includes('boleta') || text.includes('dua') || text.includes('dam')) {
             $(this).prop('disabled', true);
         }
     });
+
+    // LÓGICA DE PRESELECCIÓN (NUEVO)
+    if (tipoPreseleccionado) {
+        let found = false;
+        $('#nc_tipoDoc option').each(function() {
+            // Verifica que la opción no esté deshabilitada y coincida con el texto
+            if (!$(this).prop('disabled') && $(this).text().toLowerCase().includes(tipoPreseleccionado.toLowerCase())) {
+                $(this).prop('selected', true);
+                found = true;
+            }
+        });
+        
+        if(found) {
+            $('#nc_tipoDoc').trigger('change');
+        }
+    }
 
     cargarDropdown(EP_CURRENCY, 'nc_moneda');
     await prepararOpcionesIGV();
@@ -526,111 +450,6 @@ function seleccionarProveedor(id, nombre, tipoDoc, numDoc) {
     $('#listaProveedores').hide();
     $('#nc_buscarProveedor').removeClass('error'); $('#error_nc_proveedor').removeClass('show');
 }
-
-// =======================================================
-// NUEVA LÓGICA OPTIMIZADA: CACHÉ + FILTRO LOCAL
-// =======================================================
-
-async function cargarCacheNoDomiciliadas(whId) {
-    if(!whId) return;
-    if(isFetchingNoDom) return; 
-
-    const $input = $('#dua_buscarNoDom');
-    
-    try {
-        isFetchingNoDom = true;
-        $input.prop('disabled', true).attr('placeholder', 'Cargando facturas...');
-        
-        const url = `${API_BASE}/Purchase/non-domiciled-for-dua?warehouseId=${whId}`;
-        const res = await fetch(url);
-        
-        if(!res.ok) throw new Error("Error al cargar facturas");
-        
-        cachedNoDomList = await res.json();
-        
-        $input.prop('disabled', false).attr('placeholder', 'Buscar factura no domiciliada...');
-        
-    } catch (e) {
-        console.error(e);
-        $input.attr('placeholder', 'Error al cargar datos');
-        toastr.error("No se pudieron cargar las facturas no domiciliadas");
-    } finally {
-        isFetchingNoDom = false;
-    }
-}
-
-function filtrarNoDomiciliadasLocal(texto) {
-    const $list = $('#listaNoDom'); 
-    
-    if (!cachedNoDomList || cachedNoDomList.length === 0) {
-        $list.hide();
-        return;
-    }
-    
-    $list.empty();
-    
-    let items = cachedNoDomList;
-    if(texto && texto.trim().length > 0) {
-        const t = texto.toLowerCase();
-        items = cachedNoDomList.filter(d => 
-            (d.personName && d.personName.toLowerCase().includes(t)) || 
-            (d.personDocumentNumber && d.personDocumentNumber.includes(t)) ||
-            (d.voucherNumber && d.voucherNumber.includes(t))
-        );
-    }
-
-    if (items.length > 0) {
-        $list.show();
-        items.forEach(p => {
-            if(duaRelatedPurchases.some(sel => sel.id === p.id)) return;
-
-            const itemHtml = `
-            <div class="autocomplete-item" onclick='seleccionarCompraNoDom(${JSON.stringify(p)})'>
-                <div class="item-info-clickable" style="width:100%">
-                    <div style="font-weight: 600; color: #333; font-size: 13px;">${p.personName}</div>
-                    <div style="color: #666; font-size: 11px; margin-top: 2px;">Doc: ${p.personDocumentNumber} | Comp: ${p.voucherNumber}</div>
-                </div>
-            </div>`;
-            $list.append(itemHtml);
-        });
-    } else {
-        $list.hide();
-    }
-}
-
-function seleccionarCompraNoDom(obj) {
-    duaRelatedPurchases.push(obj);
-    $('#dua_buscarNoDom').val('').focus();
-    $('#listaNoDom').hide();
-    filtrarNoDomiciliadasLocal('');
-    renderSelectedNoDom();
-}
-
-function renderSelectedNoDom() {
-    const $container = $('#dua_selected_list');
-    $container.empty();
-    
-    duaRelatedPurchases.forEach((p, index) => {
-        const row = `
-        <div class="nodom-item">
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:600; color:#333; font-size:13px;">${p.personName}</span>
-                <span style="color:#666; font-size:12px;">Doc: ${p.personDocumentNumber} | Comp: ${p.voucherNumber}</span>
-            </div>
-            <button class="btn-trash-red" onclick="removerCompraNoDom(${index})" title="Eliminar">
-                <i class='bx bx-trash'></i>
-            </button>
-        </div>`;
-        $container.append(row);
-    });
-}
-
-function removerCompraNoDom(index) {
-    duaRelatedPurchases.splice(index, 1);
-    renderSelectedNoDom();
-}
-
-// -------------------------------------------------------
 
 async function buscarProducto(texto) {
     const $list = $('#listaProductos'); 
@@ -756,16 +575,9 @@ function guardarCompra() {
 
     const tipoDocText = $('#nc_tipoDoc option:selected').text().toLowerCase();
     const isNoDomiciliado = tipoDocText.includes("no domiciliado");
-    const isDua = tipoDocText.includes("dua") || tipoDocText.includes("dam");
 
     const serie = $('#nc_serie').val().trim();
-    if (isDua) {
-        if(serie.length !== 3) { 
-            $('#nc_serie').addClass('error'); 
-            $('#error_nc_serie').text('3 dígitos obligatorios').addClass('show'); 
-            isValid = false; 
-        }
-    } else if (!isNoDomiciliado) {
+    if (!isNoDomiciliado) {
         if(serie.length !== 4) { 
             $('#nc_serie').addClass('error'); 
             $('#error_nc_serie').text('4 dígitos obligatorios').addClass('show'); 
@@ -783,7 +595,7 @@ function guardarCompra() {
 
     if(!$('#nc_idProveedor').val()){ $('#nc_buscarProveedor').addClass('error'); $('#error_nc_proveedor').addClass('show'); isValid = false; }
 
-    if (!isDua && $('#nc_tablaProductos tr').length === 0) { 
+    if ($('#nc_tablaProductos tr').length === 0) { 
         toastr.warning("Agregue al menos un producto."); return; 
     }
 
@@ -799,79 +611,6 @@ function guardarCompra() {
     $btn.prop('disabled', true).html("<i class='bx bx-loader-alt bx-spin'></i> Guardando...");
 
     const payloadSerie = isNoDomiciliado ? null : serie;
-
-    if (isDua) {
-        let duaValid = true;
-        const duaFieldsRequired = ['dua_fechaPago', 'dua_anio', 'dua_fob', 'dua_flete', 'dua_seguro'];
-
-        duaFieldsRequired.forEach(id => {
-            const val = $(`#${id}`).val();
-            if (!val || val.toString().trim() === '') {
-                $(`#${id}`).addClass('error');
-                duaValid = false;
-            } else {
-                $(`#${id}`).removeClass('error');
-            }
-        });
-
-        if(duaRelatedPurchases.length === 0) {
-            toastr.error("Debe vincular al menos una factura no domiciliada.");
-            $('#dua_buscarNoDom').addClass('error');
-            $('#error_dua_nodom').addClass('show');
-            duaValid = false;
-        }
-
-        if (!duaValid) {
-            toastr.error("Complete los campos obligatorios de la DUA.");
-            $btn.prop('disabled', false).html(originalText);
-            return;
-        }
-
-        const relatedIds = duaRelatedPurchases.map(p => p.id);
-
-        // NUEVO FORMATO PLANO CON STRINGS
-        const payloadDua = {
-            warehouseId: $('#nc_almacen').val(),
-            currencyId: $('#nc_moneda').val(),
-            personId: $('#nc_idProveedor').val(),
-            serie: payloadSerie,
-            duaYear: ($('#dua_anio').val() || new Date().getFullYear()).toString(),
-            number: numero,
-            issueDate: $('#nc_fecha').val(),
-            paymentDate: $('#dua_fechaPago').val(),
-            perceptionRate: (parseFloat($('#dua_percepcion').val()) || 0).toString(), 
-            fobValue: (parseFloat($('#dua_fob').val()) || 0).toFixed(3),
-            freightValue: (parseFloat($('#dua_flete').val()) || 0).toFixed(3),
-            insuranceValue: (parseFloat($('#dua_seguro').val()) || 0).toFixed(3),
-            adValoremValue: (parseFloat($('#dua_advalorem').val()) || 0).toFixed(3),
-            relatedPurchaseIds: relatedIds
-        };
-
-        // SE USA EL ENDPOINT CORREGIDO: /api/Dua
-        fetch(EP_PURCHASE_DUA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadDua) })
-        .then(async res => {
-            const data = await res.json().catch(() => ({}));
-            if (res.ok) { 
-                toastr.success(data?.message || "DUA registrada correctamente"); 
-                cerrarModal('modalNuevaCompra'); 
-                fetchCompras(currentPage); 
-            } else { 
-                if (data.errors && Array.isArray(data.errors)) {
-                    data.errors.forEach(err => toastr.error(err));
-                } else if (data.message) {
-                    toastr.error(data.message);
-                } else {
-                    toastr.error("Error al guardar DUA");
-                }
-                $btn.prop('disabled', false).html(originalText);
-            }
-        }).catch(() => {
-            toastr.error("Error de conexión");
-            $btn.prop('disabled', false).html(originalText);
-        });
-        
-        return; 
-    }
 
     let productError = false;
     const detalles = [];

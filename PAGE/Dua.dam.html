@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de DUA/DAM</title>
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="../CSS/Dua.dam.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class='bx bxl-codepen'></i></div>
+            <h2>inventory System</h2>
+        </div>
+        <ul class="sidebar-links">
+            <li><a href="Productos.html"><i class='bx bx-cube icon'></i><span class="text">Productos</span></a></li>
+            <li><a href="Categorias.html"><i class='bx bx-purchase-tag-alt icon'></i><span
+                        class="text">Categorías</span></a></li>
+            <li><a href="Inventario.html"><i class='bx bx-clipboard icon'></i><span class="text">Inventario</span></a>
+            </li>
+            <li><a href="Movimientos.html"><i class='bx bx-transfer icon'></i><span class="text">Movimientos</span></a>
+            </li>
+            <li><a href="Ajuste_de_inventario.html"><i class='bx bx-slider-alt icon'></i><span class="text">Ajuste
+                        Inv.</span></a></li>
+            <li><a href="Almacenes.html"><i class='bx bx-building-house icon'></i><span
+                        class="text">Almacenes</span></a></li>
+
+            <h4>Ventas y Compras</h4>
+            <li><a href="Compras.html"><i class='bx bx-cart-add icon'></i><span class="text">Compras</span></a></li>
+            <li><a href="Ventas.html"><i class='bx bx-cart-download icon'></i><span class="text">Ventas</span></a></li>
+
+            <h4>Administración</h4>
+            <li><a href="Personas.html"><i class='bx bx-group icon'></i><span class="text">Personas</span></a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div class="header-content">
+                <h2>Crear DUA/DAM</h2>
+                <p class="subtitle">Nacionalización de mercadería (Compras No Domiciliadas).</p>
+            </div>
+            <button class="btn-secondary" onclick="window.location.href='Compras.html'">
+                <i class='bx bx-arrow-back'></i> Cancelar
+            </button>
+        </div>
+
+        <div class="dua-wrapper">
+            <div class="card-panel">
+                <h4 class="card-title">Datos Generales</h4>
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label>Almacén *</label>
+                        <select id="dua_almacen" class="form-control"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Moneda *</label>
+                        <select id="dua_moneda" class="form-control"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Serie *</label>
+                        <input type="text" id="dua_serie" class="form-control" placeholder="118">
+                    </div>
+                    <div class="form-group"></div>
+
+                    <div class="form-group full-row">
+                        <label>Agente/Entidad (SUNAT) *</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" id="dua_buscarProveedor" class="form-control"
+                                placeholder="Buscar proveedor por nombre o documento..." autocomplete="off">
+
+                            <div id="listaProveedores" class="autocomplete-list"></div>
+                            <input type="hidden" id="dua_idProveedor">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Año *</label>
+                        <input type="number" id="dua_year" class="form-control" placeholder="2025" value="2025">
+                    </div>
+                    <div class="form-group">
+                        <label>Número *</label>
+                        <input type="text" id="dua_numero" class="form-control" placeholder="123456">
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha Emisión *</label>
+                        <input type="date" id="dua_fechaEmision" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha Pago/Venc. *</label>
+                        <input type="date" id="dua_fechaPago" class="form-control">
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card-panel">
+                <h4 class="card-title">Compras No Domiciliadas Disponibles</h4>
+                <div id="loadingCompras" style="display:none; color:#666;">Cargando compras...</div>
+
+                <div id="containerCompras" class="compras-list-container">
+                    <div style="padding:20px; text-align:center; color:#888;">
+                        <i class='bx bx-search' style="font-size:24px; margin-bottom:5px;"></i><br>
+                        Seleccione un almacén para ver facturas pendientes.
+                    </div>
+                </div>
+
+                <div class="selection-summary">
+                    <span>Seleccionadas: <b id="lblCountSel">0</b> compras</span>
+                    <span>Total Ref: <b id="lblTotalSel">0.00</b></span>
+                </div>
+            </div>
+
+            <div class="card-panel">
+                <h4 class="card-title">Valores DUA</h4>
+                <div class="values-grid">
+                    <div class="inputs-col">
+                        <div class="input-row">
+                            <label>FOB Total:</label>
+                            <input type="number" id="val_fob" class="input-calc" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="input-row">
+                            <label>Flete:</label>
+                            <input type="number" id="val_flete" class="input-calc" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="input-row">
+                            <label>Seguro:</label>
+                            <input type="number" id="val_seguro" class="input-calc" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="input-row">
+                            <label>Ad Valorem:</label>
+                            <input type="number" id="val_advalorem" class="input-calc" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="input-row">
+                            <label>Percepción (%):</label>
+                            <input type="number" id="val_tasa_percepcion" class="input-calc" step="0.01" placeholder="0"
+                                value="0">
+                        </div>
+                    </div>
+
+                    <div class="results-col">
+                        <div class="result-row">
+                            <span>CIF (Calc):</span>
+                            <span id="res_cif" class="mono-font">0.00</span>
+                        </div>
+                        <div class="result-row">
+                            <span>IPM (2%):</span>
+                            <span id="res_ipm" class="mono-font">0.00</span>
+                        </div>
+                        <div class="result-row">
+                            <span>IGV (16%):</span>
+                            <span id="res_igv" class="mono-font">0.00</span>
+                        </div>
+                        <div class="result-row highlight">
+                            <span>TOTAL DUA:</span>
+                            <span id="res_total" class="mono-font">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-panel">
+                <h4 class="card-title">Distribución por Producto</h4>
+                <div class="table-container">
+                    <table class="dist-table">
+                        <thead>
+                            <tr>
+                                <th>PRODUCTO</th>
+                                <th class="text-right">CANTIDAD</th>
+                                <th class="text-right">V. ORIGEN</th>
+                                <th class="text-right">PROPORCIÓN</th>
+                                <th class="text-right">DIST.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyDistribucion">
+                            <tr>
+                                <td colspan="5" class="text-center" style="padding:20px; color:#999;">Seleccione compras
+                                    para calcular distribución</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="action-footer">
+                <button class="btn-save-dua" id="btnGuardarDua">
+                    <i class='bx bx-save'></i> Registrar DUA
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="../JS/Dua.dam.js"></script>
+
+</body>
+
+</html>

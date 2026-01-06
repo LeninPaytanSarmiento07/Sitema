@@ -37,7 +37,18 @@
             <h2>Gestión de Compras</h2>
             <p class="subtitle">Historial de ingresos de mercadería.</p>
         </div>
-        <button class="btn-nuevo" onclick="abrirModalNuevaCompra()">➕ Nueva Compra</button>
+        
+        <div class="dropdown">
+            <button class="btn-nuevo">
+                ➕ Nueva Compra
+            </button>
+            <div class="dropdown-content">
+                <a href="#" onclick="abrirModalNuevaCompra('Factura')">Nueva Factura</a>
+                <a href="#" onclick="abrirModalNuevaCompra('No domiciliado')">Nueva Compra No Domiciliada</a>
+                <a href="Dua.dam.html">Registro de DUA/DAM</a>
+            </div>
+        </div>
+
     </div>
 
     <div class="search-container">
@@ -306,96 +317,6 @@
                 <div class="product-add-section"><div class="autocomplete-wrapper flex-grow-1"><input type="text" id="nc_buscarProducto" class="form-control search-product-input" placeholder="📦 Buscar productos para agregar..." autocomplete="off"><div id="listaProductos" class="autocomplete-list"></div></div><button class="btn-create-prod" onclick="abrirModalCrearProducto()">+ Crear Producto</button></div>
                 <div class="table-responsive-modal table-scroll-container"><table class="modal-table"><thead><tr><th>PRODUCTO</th><th>UNIDAD</th><th class="w-200">TIPO IGV</th><th class="w-80">CANT.</th><th class="w-100">VAL. UNIT.</th><th class="text-right">SUBTOTAL</th><th class="text-right">IGV</th><th class="text-right">TOTAL</th><th></th></tr></thead><tbody id="nc_tablaProductos"></tbody></table></div>
                 <div class="totals-section"><div class="totals-box"><div class="total-row"><span>No Gravado:</span><span id="nc_txtNoGravado">0.00</span></div><div class="total-row"><span>SubTotal:</span><span id="nc_txtSubTotal">0.00</span></div><div class="total-row"><span>IGV (18%):</span><span id="nc_txtIGV">0.00</span></div><div class="total-row main-total"><span>Total:</span><span id="nc_txtTotal">0.00</span></div></div></div>
-            </div>
-
-            <div id="sectionDatosDua" class="hidden">
-                <h4 class="section-title"><i class='bx bxs-ship'></i> Datos de Importación (DUA/DAM)</h4>
-                
-                <div class="dua-input-layout">
-                    <div class="form-grid flex-1 grid-3-col">
-                        
-                        <div class="form-group">
-                            <label>F. Vencimiento/Pago:</label>
-                            <input type="date" id="dua_fechaPago" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Año DUA:</label>
-                            <select id="dua_anio" class="form-control"></select>
-                        </div>
-                        <div class="form-group">
-                            <label>Percepción (%):</label>
-                            <div class="input-with-symbol">
-                                <input type="number" id="dua_percepcion" class="form-control dua-calc" placeholder="0" min="0" step="0.01">
-                                <span class="symbol">%</span>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Valor FOB:</label>
-                            <input type="number" id="dua_fob" class="form-control dua-calc" placeholder="0.000" step="0.001">
-                        </div>
-                        <div class="form-group">
-                            <label>Flete:</label>
-                            <input type="number" id="dua_flete" class="form-control dua-calc" placeholder="0.000" step="0.001">
-                        </div>
-                        <div class="form-group">
-                            <label>Seguro:</label>
-                            <input type="number" id="dua_seguro" class="form-control dua-calc" placeholder="0.000" step="0.001">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Ad Valorem:</label>
-                            <input type="number" id="dua_advalorem" class="form-control dua-calc" placeholder="0.000" step="0.001">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>IPM (2%):</label>
-                            <input type="number" id="dua_ipm" class="form-control bg-light" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>IGV (16%):</label>
-                            <input type="number" id="dua_igv" class="form-control bg-light" readonly>
-                        </div>
-                    </div>
-
-                    <div class="dua-totals-box">
-                        <div class="dua-total-row">
-                            <span>SUBTOTAL</span>
-                            <input type="text" id="txtDuaSubtotal" readonly value="0.00">
-                        </div>
-                        <div class="dua-total-row">
-                            <span>NO GRAVADO</span>
-                            <input type="text" id="txtDuaNoGravado" readonly value="0.00">
-                        </div>
-                        <div class="dua-total-row">
-                            <span>IGV (16%+2%)</span>
-                            <input type="text" id="txtDuaIgv" readonly value="0.00">
-                        </div>
-                        <div class="dua-total-row">
-                            <span>TOTAL</span>
-                            <input type="text" id="txtDuaTotal" readonly value="0.00">
-                        </div>
-                        <div class="dua-total-row">
-                            <span>PERCEPCIÓN</span>
-                            <input type="text" id="txtDuaPercepcion" readonly value="0.00">
-                        </div>
-                     </div>
-                </div>
-
-                <hr class="divider">
-                <div class="form-group full-width" style="margin-top: 15px;">
-                    <label>Facturas No Domiciliadas a Nacionalizar *</label>
-                    <div class="autocomplete-wrapper" style="width: 100%;">
-                        <span class="search-icon" style="left: 10px; top:50%; transform:translateY(-50%);">🔍</span>
-                        <input type="text" id="dua_buscarNoDom" class="form-control" style="padding-left: 35px; width: 100%;" placeholder="Seleccione almacén primero..." autocomplete="off" disabled>
-                        <div id="listaNoDom" class="autocomplete-list"></div>
-                    </div>
-                    
-                    <div id="dua_selected_list" class="selected-nodom-container"></div>
-                    
-                    <span class="error-message" id="error_dua_nodom">Debe vincular al menos una factura no domiciliada</span>
-                </div>
-
             </div>
 
         </div>
