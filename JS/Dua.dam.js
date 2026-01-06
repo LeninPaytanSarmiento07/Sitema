@@ -13,7 +13,13 @@ let availablePurchases = []; // Almacena datos crudos de la API
 let selectedPurchases = [];  // Almacena las compras seleccionadas (objetos completos)
 
 // Configuración Toastr
-toastr.options = { "closeButton": true, "positionClass": "toast-bottom-right", "timeOut": "5000", "preventDuplicates": false };
+toastr.options = { 
+    "closeButton": true, 
+    "positionClass": "toast-bottom-right", 
+    "timeOut": "5000", 
+    "preventDuplicates": true,
+    "progressBar": true
+};
 
 $(document).ready(function() {
     initPage();
@@ -41,12 +47,24 @@ $(document).ready(function() {
 });
 
 async function initPage() {
+    llenarComboAniosDua();
     await cargarSelect(EP_WAREHOUSE, 'dua_almacen');
     await cargarSelect(EP_CURRENCY, 'dua_moneda');
     
     // Cargar compras del primer almacén si existe
     const firstWh = $('#dua_almacen').val();
     if(firstWh) cargarComprasNoDomiciliadas(firstWh);
+}
+
+function llenarComboAniosDua() {
+    const $sel = $('#dua_year');
+    $sel.empty();
+    const currentYear = new Date().getFullYear();
+    // 2026 hasta 2018
+    for(let y = 2026; y >= 2018; y--) {
+        const selected = (y === currentYear) ? 'selected' : '';
+        $sel.append(`<option value="${y}" ${selected}>${y}</option>`);
+    }
 }
 
 async function cargarSelect(url, elementId) {
@@ -62,14 +80,14 @@ async function cargarSelect(url, elementId) {
 }
 
 // ---------------------------------------------------
-// 1. CARGA DE COMPRAS NO DOMICILIADAS (CON ACORDEÓN Y ALINEACIÓN)
+// 1. CARGA DE COMPRAS
 // ---------------------------------------------------
 async function cargarComprasNoDomiciliadas(warehouseId) {
     const $container = $('#containerCompras');
     const $loader = $('#loadingCompras');
     
     if(!warehouseId) {
-        $container.html('<div style="padding:20px; text-align:center; color:#888;">Seleccione un almacén.</div>');
+        $container.html('<div style="padding:40px; text-align:center; color:#90a4ae;">Seleccione un almacén.</div>');
         return;
     }
 
@@ -87,16 +105,14 @@ async function cargarComprasNoDomiciliadas(warehouseId) {
         availablePurchases = data;
 
         if(data.length === 0) {
-            $container.html('<div style="padding:20px; text-align:center; color:#888;">No hay compras no domiciliadas pendientes.</div>');
+            $container.html('<div style="padding:40px; text-align:center; color:#90a4ae;">No hay compras no domiciliadas pendientes.</div>');
         } else {
             data.forEach(compra => {
-                // Datos cabecera
                 const fecha = compra.issueDate ? new Date(compra.issueDate).toLocaleDateString() : 'S/F';
                 const totalFmt = compra.total.toLocaleString('en-US', {minimumFractionDigits:2});
                 const serieNumero = compra.voucherNumber || 'S/N';
                 const proveedor = compra.personName || 'Sin Nombre';
 
-                // Generar HTML de Productos (Tabla Interna Alineada)
                 let tableRowsHtml = '';
                 const itemsCount = compra.details ? compra.details.length : 0;
                 
@@ -116,52 +132,26 @@ async function cargarComprasNoDomiciliadas(warehouseId) {
                     tableRowsHtml = '<tr><td colspan="4" style="text-align:center; color:#999;">Sin detalles</td></tr>';
                 }
 
-                // Estructura HTML
                 const itemHtml = `
                     <div class="compra-wrapper">
                         <div class="compra-header-row">
                             <input type="checkbox" class="compra-checkbox" data-id="${compra.id}" onchange="toggleSeleccion('${compra.id}')">
-                            
-                            <button class="btn-expand" id="btn-exp-${compra.id}" onclick="toggleDetalleCompra('${compra.id}')">
-                                <i class='bx bx-chevron-right'></i>
-                            </button>
-                            
+                            <button class="btn-expand" id="btn-exp-${compra.id}" onclick="toggleDetalleCompra('${compra.id}')"><i class='bx bx-chevron-right'></i></button>
                             <div class="compra-info-text">
-                                <div class="info-segment" style="width: 150px;">
-                                    <span class="info-val">${serieNumero}</span>
-                                </div>
+                                <div class="info-segment" style="width: 150px;"><span class="info-val">${serieNumero}</span></div>
                                 <span class="separator">|</span>
-                                <div class="info-segment" style="flex: 1;">
-                                    <span class="info-val">${proveedor}</span>
-                                </div>
+                                <div class="info-segment" style="flex: 1;"><span class="info-val">${proveedor}</span></div>
                                 <span class="separator">|</span>
-                                <div class="info-segment" style="width: 100px;">
-                                    <span class="info-val">${fecha}</span>
-                                </div>
+                                <div class="info-segment" style="width: 100px;"><span class="info-val">${fecha}</span></div>
                                 <span class="separator">|</span>
-                                <div class="info-segment">
-                                    <span class="total-highlight">$ ${totalFmt}</span>
-                                </div>
+                                <div class="info-segment"><span class="total-highlight">$ ${totalFmt}</span></div>
                             </div>
                         </div>
-
                         <div id="details-${compra.id}" class="compra-details-box">
-                            <div class="details-title">
-                                <i class='bx bx-list-ul'></i> Lista de Productos (${itemsCount}):
-                            </div>
-                            
+                            <div class="details-title"><i class='bx bx-list-ul'></i> Lista de Productos (${itemsCount}):</div>
                             <table class="mini-prod-table">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-right w-unit">Unidad</th>
-                                        <th class="text-right w-qty">Cant.</th>
-                                        <th class="text-right w-val">V. Unit.</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${tableRowsHtml}
-                                </tbody>
+                                <thead><tr><th>Producto</th><th class="text-right w-unit">Unidad</th><th class="text-right w-qty">Cant.</th><th class="text-right w-val">V. Unit.</th></tr></thead>
+                                <tbody>${tableRowsHtml}</tbody>
                             </table>
                         </div>
                     </div>
@@ -177,33 +167,20 @@ async function cargarComprasNoDomiciliadas(warehouseId) {
     }
 }
 
-// ---------------------------------------------------
-// FUNCIÓN PARA DESPLEGAR DETALLES
-// ---------------------------------------------------
 window.toggleDetalleCompra = function(id) {
-    const detailBox = $(`#details-${id}`);
-    const btn = $(`#btn-exp-${id}`);
-    
-    // Alternar visibilidad (Slide)
-    detailBox.slideToggle(200);
-    
-    // Alternar clase para rotar icono
-    btn.toggleClass('active');
+    $(`#details-${id}`).slideToggle(200);
+    $(`#btn-exp-${id}`).toggleClass('active');
 };
 
 // ---------------------------------------------------
-// 2. LÓGICA DE SELECCIÓN Y CÁLCULOS
+// 2. CÁLCULOS
 // ---------------------------------------------------
 window.toggleSeleccion = function(id) {
     const compra = availablePurchases.find(c => c.id === id);
     if(!compra) return;
-
     const idx = selectedPurchases.findIndex(c => c.id === id);
-    if(idx === -1) {
-        selectedPurchases.push(compra);
-    } else {
-        selectedPurchases.splice(idx, 1);
-    }
+    if(idx === -1) selectedPurchases.push(compra);
+    else selectedPurchases.splice(idx, 1);
 
     actualizarResumenSeleccion();
     autoLlenarFOB();
@@ -211,10 +188,8 @@ window.toggleSeleccion = function(id) {
 };
 
 function actualizarResumenSeleccion() {
-    const count = selectedPurchases.length;
     const total = selectedPurchases.reduce((sum, c) => sum + c.total, 0);
-    
-    $('#lblCountSel').text(count);
+    $('#lblCountSel').text(selectedPurchases.length);
     $('#lblTotalSel').text('$ ' + total.toLocaleString('en-US', {minimumFractionDigits:2}));
 }
 
@@ -228,14 +203,11 @@ function calcularValoresDua() {
     const flete = parseFloat($('#val_flete').val()) || 0;
     const seguro = parseFloat($('#val_seguro').val()) || 0;
     const adValorem = parseFloat($('#val_advalorem').val()) || 0;
-    const tasaPerc = parseFloat($('#val_tasa_percepcion').val()) || 0;
-
+    
     const cif = fob + flete + seguro;
     const ipm = (cif + adValorem) * 0.02;
     const igv = (cif + adValorem) * 0.16;
-    
-    const totalTributos = adValorem + ipm + igv;
-    const totalGlobal = cif + totalTributos; 
+    const totalGlobal = cif + adValorem + ipm + igv; 
 
     $('#res_cif').text(cif.toFixed(2));
     $('#res_ipm').text(ipm.toFixed(2));
@@ -250,7 +222,7 @@ function calcularDistribucion(totalFob, flete, seguro, adval, ipm, igv) {
     $tbody.empty();
 
     if(selectedPurchases.length === 0 || totalFob <= 0) {
-        $tbody.html('<tr><td colspan="5" class="text-center" style="padding:15px; color:#999;">Seleccione compras y asegure FOB > 0</td></tr>');
+        $tbody.html('<tr><td colspan="5" class="text-center" style="padding:30px; color:#90a4ae;">Seleccione compras y asegure FOB > 0</td></tr>');
         return;
     }
 
@@ -268,14 +240,17 @@ function calcularDistribucion(totalFob, flete, seguro, adval, ipm, igv) {
                 const distValue = totalGastos * proportion;
                 const propPercent = (proportion * 100).toFixed(2);
 
-                // FILA ALINEADA
+                const totalLineValue = lineTotal + distValue;
+                let finalUnitPrice = 0;
+                if(det.quantity > 0) finalUnitPrice = totalLineValue / det.quantity;
+
                 $tbody.append(`
                     <tr>
-                        <td><small style="color:#888;">${det.productCode}</small><br><b>${det.productName}</b></td>
+                        <td><small style="color:#78909c;">${det.productCode}</small><br><b>${det.productName}</b></td>
                         <td class="text-right">${det.quantity.toFixed(2)}</td>
-                        <td class="text-right">${lineTotal.toFixed(2)}</td>
+                        <td class="text-right">${unitVal.toFixed(2)}</td>
                         <td class="text-right">${propPercent} %</td>
-                        <td class="text-right"><b>${distValue.toFixed(2)}</b></td>
+                        <td class="text-right" style="color:#2e7d32; font-weight:700;">${finalUnitPrice.toFixed(2)}</td>
                     </tr>
                 `);
             });
@@ -284,42 +259,28 @@ function calcularDistribucion(totalFob, flete, seguro, adval, ipm, igv) {
 }
 
 function limpiarCalculos() {
-    $('#val_fob').val('');
-    $('#val_flete').val('');
-    $('#val_seguro').val('');
-    $('#val_advalorem').val('');
-    $('#res_cif').text('0.00');
-    $('#res_ipm').text('0.00');
-    $('#res_igv').text('0.00');
-    $('#res_total').text('0.00');
+    $('#val_fob').val(''); $('#val_flete').val(''); $('#val_seguro').val(''); $('#val_advalorem').val('');
+    $('#res_cif').text('0.00'); $('#res_ipm').text('0.00'); $('#res_igv').text('0.00'); $('#res_total').text('0.00');
     $('#bodyDistribucion').empty();
 }
 
 // ---------------------------------------------------
-// 3. AUTOCOMPLETE PROVEEDOR
+// 3. AUTOCOMPLETE
 // ---------------------------------------------------
 async function buscarProveedor(term) {
     const $list = $('#listaProveedores');
     if(term.length < 2) { $list.hide(); return; }
-
     try {
         const r = await fetch(`${EP_PERSON_SEARCH}?searchTerm=${term}`);
         const data = await r.json();
         const items = data.items || data;
-        
         $list.empty();
         if(items.length > 0) {
             $list.show();
             items.forEach(p => {
-                $list.append(`
-                    <div class="autocomplete-item" onclick="seleccionarProveedor('${p.id}', '${p.name}')">
-                        <b>${p.name}</b><br><small style="color:#888;">${p.documentNumber}</small>
-                    </div>
-                `);
+                $list.append(`<div class="autocomplete-item" onclick="seleccionarProveedor('${p.id}', '${p.name}')"><b>${p.name}</b><br><small style="color:#78909c;">${p.documentNumber}</small></div>`);
             });
-        } else {
-            $list.hide();
-        }
+        } else { $list.hide(); }
     } catch(e) { console.error(e); }
 }
 
@@ -329,54 +290,71 @@ window.seleccionarProveedor = function(id, name) {
     $('#listaProveedores').hide();
 };
 
-$(document).click(function(e) { 
-    if(!$(e.target).closest('.autocomplete-wrapper').length) {
-        $('#listaProveedores').hide(); 
-    } 
-});
+$(document).click(function(e) { if(!$(e.target).closest('.autocomplete-wrapper').length) $('#listaProveedores').hide(); });
 
 // ---------------------------------------------------
-// 4. GUARDAR
+// 4. GUARDAR (VALIDACIÓN REFORZADA)
 // ---------------------------------------------------
 async function guardarDua() {
+    // 1. Validar Campos Generales
     const whId = $('#dua_almacen').val();
     const currId = $('#dua_moneda').val();
     const persId = $('#dua_idProveedor').val();
-    const serie = $('#dua_serie').val();
-    const numero = $('#dua_numero').val();
+    const serie = $('#dua_serie').val().trim();
+    const numero = $('#dua_numero').val().trim();
     const year = $('#dua_year').val();
-    
-    if(!whId || !currId || !persId || !serie || !numero || !year) {
-        toastr.error("Complete los campos obligatorios.");
-        return;
-    }
+    const fechaEmision = $('#dua_fechaEmision').val();
+    const fechaPago = $('#dua_fechaPago').val();
 
+    if(!whId) { toastr.error("Seleccione un Almacén."); return; }
+    if(!currId) { toastr.error("Seleccione una Moneda."); return; }
+    if(!serie) { toastr.error("Ingrese la Serie."); return; }
+    if(!persId) { toastr.error("Busque y seleccione un Agente/Entidad."); return; }
+    if(!numero) { toastr.error("Ingrese el Número."); return; }
+    if(!fechaEmision) { toastr.error("Ingrese Fecha de Emisión."); return; }
+    if(!fechaPago) { toastr.error("Ingrese Fecha de Pago."); return; }
+
+    // 2. Validar Selección de Compras
     if(selectedPurchases.length === 0) {
-        toastr.error("Debe seleccionar al menos una compra.");
+        toastr.error("Debe seleccionar al menos una Compra No Domiciliada de la lista.");
         return;
     }
 
-    const ids = selectedPurchases.map(c => c.id);
+    // 3. Validar Valores Monetarios (Obligatorio numérico > 0 o 0 permitido según lógica de negocio, pero deben estar presentes)
+    const fobStr = $('#val_fob').val();
+    const fleteStr = $('#val_flete').val();
+    const seguroStr = $('#val_seguro').val();
+    const adValStr = $('#val_advalorem').val();
 
+    if(fobStr === "") { toastr.error("Ingrese el valor FOB."); return; }
+    if(fleteStr === "") { toastr.error("Ingrese el valor Flete."); return; }
+    if(seguroStr === "") { toastr.error("Ingrese el valor Seguro."); return; }
+    if(adValStr === "") { toastr.error("Ingrese el valor Ad Valorem."); return; }
+
+    const fob = parseFloat(fobStr);
+    if(fob <= 0) { toastr.error("El valor FOB debe ser mayor a 0."); return; }
+
+    // Preparar Payload
+    const ids = selectedPurchases.map(c => c.id);
     const payload = {
         warehouseId: whId,
         currencyId: currId,
         personId: persId,
         serie: serie,
-        duaYear: year,
+        duaYear: parseInt(year),
         number: numero,
-        issueDate: $('#dua_fechaEmision').val(),
-        paymentDate: $('#dua_fechaPago').val(),
-        perceptionRate: $('#val_tasa_percepcion').val() || "0",
-        fobValue: ($('#val_fob').val() || 0).toString(),
-        freightValue: ($('#val_flete').val() || 0).toString(),
-        insuranceValue: ($('#val_seguro').val() || 0).toString(),
-        adValoremValue: ($('#val_advalorem').val() || 0).toString(),
+        issueDate: fechaEmision,
+        paymentDate: fechaPago,
+        perceptionRate: parseFloat($('#val_tasa_percepcion').val()) || 0,
+        fobValue: fob,
+        freightValue: parseFloat(fleteStr) || 0,
+        insuranceValue: parseFloat(seguroStr) || 0,
+        adValoremValue: parseFloat(adValStr) || 0,
         relatedPurchaseIds: ids
     };
 
     const $btn = $('#btnGuardarDua');
-    $btn.prop('disabled', true).text('Guardando...');
+    $btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Guardando...');
 
     try {
         const response = await fetch(EP_DUA_CREATE, {
@@ -385,21 +363,29 @@ async function guardarDua() {
             body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        // Lectura segura de la respuesta
+        const text = await response.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch(e) { console.warn("Resp no JSON:", text); }
 
         if(response.ok) {
-            toastr.success(data.message || "DUA registrada correctamente");
-            setTimeout(() => {
-                window.location.href = 'Compras.html';
-            }, 1500);
+            toastr.success(data?.message || "DUA registrada correctamente");
+            setTimeout(() => { window.location.href = 'Compras.html'; }, 1500);
         } else {
-            if(data.errors) data.errors.forEach(e => toastr.error(e));
-            else toastr.error(data.message || "Error al registrar DUA");
-            $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Registrar DUA");
+            // Manejo de errores API
+            if(data && data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+                // Mostrar todos los errores que devuelva la API
+                data.errors.forEach(err => toastr.error(err));
+            } else if (data && data.message) {
+                toastr.error(data.message);
+            } else {
+                toastr.error(`Error del servidor (${response.status}). Intente nuevamente.`);
+            }
+            $btn.prop('disabled', false).html("<i class='bx bx-save'></i> REGISTRAR DUA");
         }
     } catch(e) {
         console.error(e);
-        toastr.error("Error de conexión");
-        $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Registrar DUA");
+        toastr.error("Error de conexión. Verifique su internet.");
+        $btn.prop('disabled', false).html("<i class='bx bx-save'></i> REGISTRAR DUA");
     }
 }

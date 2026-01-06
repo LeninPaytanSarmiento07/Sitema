@@ -7,6 +7,7 @@
     <title>Registro de DUA/DAM</title>
 
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="../CSS/Dua.dam.css">
 </head>
@@ -53,7 +54,7 @@
 
         <div class="dua-wrapper">
             <div class="card-panel">
-                <h4 class="card-title">Datos Generales</h4>
+                <h4 class="card-title"><i class='bx bx-file'></i> Datos Generales</h4>
                 <div class="form-grid">
 
                     <div class="form-group">
@@ -83,7 +84,7 @@
 
                     <div class="form-group">
                         <label>Año *</label>
-                        <input type="number" id="dua_year" class="form-control" placeholder="2025" value="2025">
+                        <select id="dua_year" class="form-control"></select>
                     </div>
                     <div class="form-group">
                         <label>Número *</label>
@@ -102,24 +103,24 @@
             </div>
 
             <div class="card-panel">
-                <h4 class="card-title">Compras No Domiciliadas Disponibles</h4>
+                <h4 class="card-title"><i class='bx bx-cart'></i> Compras No Domiciliadas Disponibles</h4>
                 <div id="loadingCompras" style="display:none; color:#666;">Cargando compras...</div>
 
                 <div id="containerCompras" class="compras-list-container">
-                    <div style="padding:20px; text-align:center; color:#888;">
-                        <i class='bx bx-search' style="font-size:24px; margin-bottom:5px;"></i><br>
+                    <div style="padding:40px; text-align:center; color:#90a4ae;">
+                        <i class='bx bx-search' style="font-size:40px; margin-bottom:10px;"></i><br>
                         Seleccione un almacén para ver facturas pendientes.
                     </div>
                 </div>
 
                 <div class="selection-summary">
-                    <span>Seleccionadas: <b id="lblCountSel">0</b> compras</span>
+                    <span><i class='bx bx-check-circle'></i> Seleccionadas: <b id="lblCountSel">0</b> compras</span>
                     <span>Total Ref: <b id="lblTotalSel">0.00</b></span>
                 </div>
             </div>
 
             <div class="card-panel">
-                <h4 class="card-title">Valores DUA</h4>
+                <h4 class="card-title"><i class='bx bx-calculator'></i> Valores DUA</h4>
                 <div class="values-grid">
                     <div class="inputs-col">
                         <div class="input-row">
@@ -146,43 +147,48 @@
                     </div>
 
                     <div class="results-col">
-                        <div class="result-row">
-                            <span>CIF (Calc):</span>
-                            <span id="res_cif" class="mono-font">0.00</span>
-                        </div>
-                        <div class="result-row">
-                            <span>IPM (2%):</span>
-                            <span id="res_ipm" class="mono-font">0.00</span>
-                        </div>
-                        <div class="result-row">
-                            <span>IGV (16%):</span>
-                            <span id="res_igv" class="mono-font">0.00</span>
-                        </div>
-                        <div class="result-row highlight">
-                            <span>TOTAL DUA:</span>
-                            <span id="res_total" class="mono-font">0.00</span>
+                        <div class="result-header">Resumen de Costos</div>
+                        <div class="result-body">
+                            <div class="result-row">
+                                <span>CIF (Calculado):</span>
+                                <span id="res_cif" class="mono-font">0.00</span>
+                            </div>
+                            <div class="result-row">
+                                <span>IPM (2%):</span>
+                                <span id="res_ipm" class="mono-font">0.00</span>
+                            </div>
+                            <div class="result-row">
+                                <span>IGV (16%):</span>
+                                <span id="res_igv" class="mono-font">0.00</span>
+                            </div>
+                            <div class="result-divider"></div>
+                            <div class="result-row highlight">
+                                <span>TOTAL DUA:</span>
+                                <span id="res_total" class="mono-font">0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="card-panel">
-                <h4 class="card-title">Distribución por Producto</h4>
+                <h4 class="card-title"><i class='bx bx-table'></i> Distribución por Producto</h4>
                 <div class="table-container">
                     <table class="dist-table">
                         <thead>
                             <tr>
                                 <th>PRODUCTO</th>
                                 <th class="text-right">CANTIDAD</th>
-                                <th class="text-right">V. ORIGEN</th>
+                                <th class="text-right">V. UNIT.</th>
                                 <th class="text-right">PROPORCIÓN</th>
-                                <th class="text-right">DIST.</th>
+                                <th class="text-right">VALOR FINAL</th>
                             </tr>
                         </thead>
                         <tbody id="bodyDistribucion">
                             <tr>
-                                <td colspan="5" class="text-center" style="padding:20px; color:#999;">Seleccione compras
-                                    para calcular distribución</td>
+                                <td colspan="5" class="text-center" style="padding:30px; color:#90a4ae;">
+                                    Seleccione compras y complete valores para calcular distribución
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -191,7 +197,7 @@
 
             <div class="action-footer">
                 <button class="btn-save-dua" id="btnGuardarDua">
-                    <i class='bx bx-save'></i> Registrar DUA
+                    <i class='bx bx-save'></i> REGISTRAR DUA
                 </button>
             </div>
 
