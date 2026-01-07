@@ -34,10 +34,6 @@ let igvListCache = [];
 let searchResults = {}; 
 let searchTimer = null; 
 
-let tempNdSerie = "";
-let tempNdAnio = "";
-let tempNdNumero = "";
-
 toastr.options = {
     "closeButton": true, "debug": false, "newestOnTop": false, "progressBar": true,
     "positionClass": "toast-bottom-right", "preventDuplicates": false, "timeOut": "5000"
@@ -127,25 +123,13 @@ $(document).ready(function() {
             $errorSerie.removeClass('show');
             $numero.attr('maxlength', '20');
             $errorNumero.text('Requerido (Máx 20)'); 
-            $('#btnNoDomData').removeClass('hidden');
         } else {
             $serie.prop('disabled', false).css('background-color', '#fff');
             $numero.attr('maxlength', '8');
             $errorNumero.text('Requerido (Máx 8)');
             if($numero.val().length > 8) $numero.val($numero.val().substring(0, 8));
-            $('#btnNoDomData').addClass('hidden');
         }
     });
-
-    $('#btnNoDomData').click(function() {
-        $('#modalDatosNoDomiciliado').css('display', 'flex');
-        if(tempNdSerie) $('#nd_serie').val(tempNdSerie);
-        if(tempNdAnio) $('#nd_anio').val(tempNdAnio);
-        if(tempNdNumero) $('#nd_numero').val(tempNdNumero);
-    });
-
-    $('#nd_serie').on('input', function() { this.value = this.value.replace(/\D/g, '').substring(0,3); });
-    $('#nd_numero').on('input', function() { this.value = this.value.replace(/\D/g, '').substring(0,6); });
 
     $('#startDate').on('change', function() {
         startDate = $(this).val();
@@ -191,33 +175,6 @@ function alternarOrdenFecha() {
     }
     currentPage = 1;
     fetchCompras(currentPage);
-}
-
-function llenarComboAnios() {
-    const $selNd = $('#nd_anio'); 
-    $selNd.empty();
-    const currentYear = new Date().getFullYear(); 
-    
-    for(let y = currentYear; y >= 2018; y--) {
-        $selNd.append(`<option value="${y}">${y}</option>`);
-    }
-}
-
-function guardarDatosNoDomiciliadoTemp() {
-    const serie = $('#nd_serie').val().trim();
-    const anio = $('#nd_anio').val();
-    const numero = $('#nd_numero').val().trim();
-
-    if(serie.length !== 3) { toastr.error("La serie debe tener 3 dígitos"); return; }
-    if(numero.length !== 6) { toastr.error("El número debe tener 6 dígitos"); return; }
-    if(!anio) { toastr.error("Seleccione año"); return; }
-
-    tempNdSerie = serie;
-    tempNdAnio = anio;
-    tempNdNumero = numero;
-
-    toastr.success("Datos guardados temporalmente");
-    cerrarModal('modalDatosNoDomiciliado');
 }
 
 function formatoMoneda(valor) {
@@ -340,19 +297,11 @@ function limpiarFormularioCompra() {
     $('#nc_idProveedor').val('');
     $('#nc_buscarProducto').val('');
     
-    tempNdSerie = "";
-    tempNdAnio = "";
-    tempNdNumero = "";
-    $('#nd_serie').val('');
-    $('#nd_anio').val('');
-    $('#nd_numero').val('');
-    
     document.getElementById('nc_fecha').valueAsDate = new Date();
 
     $('#btnLimpiarProveedor').hide();
     $('#listaProveedores').hide();
     $('#listaProductos').hide();
-    $('#btnNoDomData').addClass('hidden'); 
 
     $('#nc_tablaProductos').empty();
 
@@ -368,7 +317,6 @@ function limpiarFormularioCompra() {
 async function abrirModalNuevaCompra(tipoPreseleccionado = null) {
     $('#modalNuevaCompra').css('display', 'flex');
     limpiarFormularioCompra();
-    llenarComboAnios(); 
     
     const $btn = $('#modalNuevaCompra .btn-save-modal');
     $btn.prop('disabled', false).html("<i class='bx bx-save'></i> Guardar Compra");
@@ -599,18 +547,11 @@ function guardarCompra() {
         toastr.warning("Agregue al menos un producto."); return; 
     }
 
-    if(isNoDomiciliado && (!tempNdSerie || !tempNdAnio || !tempNdNumero)) {
-        toastr.error("Para No Domiciliado, debe 'Agregar Más Datos' (Serie, Año, Número).");
-        isValid = false;
-    }
-
     if(!isValid) { toastr.error("Corrija los errores en el formulario."); return; }
 
     const $btn = $('#modalNuevaCompra .btn-save-modal');
     const originalText = $btn.html();
     $btn.prop('disabled', true).html("<i class='bx bx-loader-alt bx-spin'></i> Guardando...");
-
-    const payloadSerie = isNoDomiciliado ? null : serie;
 
     let productError = false;
     const detalles = [];
@@ -626,14 +567,17 @@ function guardarCompra() {
     if (productError) { toastr.error("Revise las cantidades y precios."); $btn.prop('disabled', false).html(originalText); return; }
 
     let nuevaCompra = {
-        warehouseId: $('#nc_almacen').val(), voucherTypeId: $('#nc_tipoDoc').val(), currencyId: $('#nc_moneda').val(), personId: $('#nc_idProveedor').val(),
-        serie: payloadSerie, number: numero, issueDate: $('#nc_fecha').val(), details: detalles
+        warehouseId: $('#nc_almacen').val(), 
+        voucherTypeId: $('#nc_tipoDoc').val(), 
+        currencyId: $('#nc_moneda').val(), 
+        personId: $('#nc_idProveedor').val(),
+        number: numero, 
+        issueDate: $('#nc_fecha').val(), 
+        details: detalles
     };
 
-    if(isNoDomiciliado) {
-        nuevaCompra.referenceDuaSerie = tempNdSerie;
-        nuevaCompra.referenceDuaYear = parseInt(tempNdAnio);
-        nuevaCompra.referenceDuaNumber = tempNdNumero;
+    if (!isNoDomiciliado) {
+        nuevaCompra.serie = serie;
     }
 
     let urlToUse = isNoDomiciliado ? EP_PURCHASE_NON_DOMICILED : EP_PURCHASE;

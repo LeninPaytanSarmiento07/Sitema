@@ -2,7 +2,7 @@
    1. RESET Y BASE
    ========================================= */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-body { min-height: 100vh; background-color: #f0f2f5; display: flex; color: #1a1a1a; font-size: 16px; /* Base font size aumentada */ }
+body { min-height: 100vh; background-color: #f0f2f5; display: flex; color: #1a1a1a; font-size: 14px; /* Base font size reducida */ }
 a { text-decoration: none; }
 
 /* =========================================
@@ -18,70 +18,70 @@ a { text-decoration: none; }
 .sidebar-links::-webkit-scrollbar { width: 5px; }
 .sidebar-links::-webkit-scrollbar-thumb { background: #3d4f5d; border-radius: 10px; }
 .sidebar-links li { margin-bottom: 8px; }
-.sidebar-links li a { display: flex; align-items: center; gap: 15px; color: #aeb7c6; padding: 12px 10px; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; font-size: 15px; }
+.sidebar-links li a { display: flex; align-items: center; gap: 15px; color: #aeb7c6; padding: 12px 10px; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; font-size: 14px; }
 .sidebar-links li a:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
 .sidebar-links li a.active { color: #fff; background: #3d4f5d; }
 .sidebar-links li a .icon { font-size: 24px; min-width: 30px; display: flex; justify-content: center; }
 .sidebar-links li a .text { opacity: 0; transition: opacity 0.3s; }
 .sidebar:hover .sidebar-links li a .text { opacity: 1; }
-.sidebar-links h4 { color: #6b778c; font-size: 0.85rem; margin: 20px 0 10px 15px; text-transform: uppercase; opacity: 0; transition: opacity 0.3s; font-weight: 700; }
+.sidebar-links h4 { color: #6b778c; font-size: 0.75rem; margin: 20px 0 10px 15px; text-transform: uppercase; opacity: 0; transition: opacity 0.3s; font-weight: 700; }
 .sidebar:hover .sidebar-links h4 { opacity: 1; }
 
 /* =========================================
    3. CONTENIDO PRINCIPAL Y HEADER
    ========================================= */
-.main-content { flex-grow: 1; padding: 40px; margin-left: 85px; transition: margin-left 0.4s ease; width: calc(100% - 85px); padding-bottom: 80px; }
+.main-content { flex-grow: 1; padding: 30px; margin-left: 85px; transition: margin-left 0.4s ease; width: calc(100% - 85px); padding-bottom: 80px; }
 .sidebar:hover + .main-content { margin-left: 260px; width: calc(100% - 260px); }
 
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-.header-content h2 { font-size: 36px; color: #2c3e50; margin-bottom: 8px; font-weight: 800; letter-spacing: -0.5px; }
-.subtitle { color: #546e7a; font-size: 16px; font-weight: 500; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.header-content h2 { font-size: 32px; color: #2c3e50; margin-bottom: 8px; font-weight: 800; letter-spacing: -0.5px; }
+.subtitle { color: #546e7a; font-size: 14px; font-weight: 500; }
 
-.btn-secondary { padding: 12px 24px; background: white; color: #455a64; border: 1px solid #cfd8dc; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; gap: 10px; align-items: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.btn-secondary { padding: 10px 20px; background: white; color: #455a64; border: 1px solid #cfd8dc; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; gap: 10px; align-items: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 .btn-secondary:hover { background: #f5f7fa; border-color: #b0bec5; color: #263238; transform: translateY(-1px); }
 
 /* =========================================
    4. ESTRUCTURA DUA (CARDS MODERNAS)
    ========================================= */
-.dua-wrapper { display: flex; flex-direction: column; gap: 30px; max-width: 1200px; margin: 0 auto; }
+.dua-wrapper { display: flex; flex-direction: column; gap: 25px; max-width: 1200px; margin: 0 auto; }
 
-.card-panel { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 35px; border: 1px solid #eef2f6; transition: transform 0.2s ease; }
-.card-title { font-size: 18px; font-weight: 800; color: #263238; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
-.card-title i { color: #3d4f5d; font-size: 22px; }
+.card-panel { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 25px; border: 1px solid #eef2f6; transition: transform 0.2s ease; }
+.card-title { font-size: 16px; font-weight: 800; color: #263238; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
+.card-title i { color: #3d4f5d; font-size: 20px; }
 
-/* FORMULARIOS - DISEÑO MÁS GRANDE */
+/* FORMULARIOS - REDUCIDO EL TAMAÑO */
 .form-grid { 
     display: grid; 
     grid-template-columns: repeat(4, 1fr); 
-    gap: 25px; 
+    gap: 20px; 
     align-items: start;
 }
 
-#dua_buscarProveedor { width: 100%; font-size: 15px; }
+#dua_buscarProveedor { width: 100%; font-size: 13px; }
 .full-row { grid-column: 1 / -1; }
 
 .form-group { display: flex; flex-direction: column; }
-.form-group label { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #37474f; }
+.form-group label { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #37474f; }
 
-/* INPUTS ESTILIZADOS Y GRANDES */
+/* INPUTS ESTILIZADOS Y MÁS PEQUEÑOS */
 .form-control { 
-    padding: 12px 15px; 
+    padding: 10px 12px; 
     border: 1px solid #cfd8dc; 
-    border-radius: 8px; 
-    font-size: 15px; 
+    border-radius: 6px; 
+    font-size: 13px; 
     outline: none; 
     transition: all 0.3s ease; 
     color: #263238; 
     background-color: #fafafa;
-    height: 48px; /* Altura fija para uniformidad */
+    height: 40px; /* Altura reducida */
 }
-.form-control:focus { border-color: #3d4f5d; background-color: #fff; box-shadow: 0 0 0 4px rgba(61, 79, 93, 0.1); }
+.form-control:focus { border-color: #3d4f5d; background-color: #fff; box-shadow: 0 0 0 3px rgba(61, 79, 93, 0.1); }
 .form-control::placeholder { color: #b0bec5; }
 
 /* AUTOCOMPLETE */
 .autocomplete-wrapper { position: relative; }
-.autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cfd8dc; max-height: 280px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 16px rgba(0,0,0,0.1); display: none; border-radius: 0 0 8px 8px; }
-.autocomplete-item { padding: 15px; border-bottom: 1px solid #f0f2f5; cursor: pointer; font-size: 14px; color: #37474f; }
+.autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cfd8dc; max-height: 250px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 16px rgba(0,0,0,0.1); display: none; border-radius: 0 0 8px 8px; }
+.autocomplete-item { padding: 12px; border-bottom: 1px solid #f0f2f5; cursor: pointer; font-size: 13px; color: #37474f; }
 .autocomplete-item:hover { background: #eceff1; }
 .autocomplete-item b { color: #102027; }
 
@@ -89,7 +89,7 @@ a { text-decoration: none; }
    LISTA DE COMPRAS (ACORDEÓN)
    ========================================= */
 .compras-list-container { 
-    max-height: 500px; 
+    max-height: 450px; 
     overflow-y: auto; 
     border: 1px solid #cfd8dc; 
     border-radius: 8px; 
@@ -103,37 +103,37 @@ a { text-decoration: none; }
 .compra-wrapper:last-child { border-bottom: none; }
 .compra-wrapper:hover { background-color: #f9fbfc; }
 
-.compra-header-row { display: flex; align-items: center; gap: 20px; padding: 15px 20px; cursor: default; }
-.compra-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: #3d4f5d; }
+.compra-header-row { display: flex; align-items: center; gap: 15px; padding: 12px 15px; cursor: default; }
+.compra-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: #3d4f5d; }
 
 .btn-expand {
     background: white; border: 1px solid #cfd8dc; color: #546e7a; border-radius: 6px;
-    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 18px; transition: all 0.2s; flex-shrink: 0;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; transition: all 0.2s; flex-shrink: 0;
 }
 .btn-expand:hover { background-color: #eceff1; color: #263238; border-color: #b0bec5; }
 .btn-expand i { transition: transform 0.2s; }
 .btn-expand.active i { transform: rotate(90deg); }
 
-.compra-info-text { font-size: 14px; color: #37474f; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; width: 100%; font-weight: 500; }
+.compra-info-text { font-size: 13px; color: #37474f; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; width: 100%; font-weight: 500; }
 .info-segment { display: flex; align-items: center; gap: 8px; }
-.info-val { color: #263238; font-size: 15px; }
-.total-highlight { font-weight: 800; color: #1b5e20; background-color: #e8f5e9; padding: 4px 12px; border-radius: 20px; border: 1px solid #c8e6c9; font-size: 15px; }
+.info-val { color: #263238; font-size: 14px; }
+.total-highlight { font-weight: 800; color: #1b5e20; background-color: #e8f5e9; padding: 3px 10px; border-radius: 20px; border: 1px solid #c8e6c9; font-size: 14px; }
 .separator { color: #cfd8dc; }
 
-.compra-details-box { display: none; background-color: #fcfcfc; border-top: 1px dashed #cfd8dc; padding: 20px 25px 25px 65px; position: relative; }
-.compra-details-box::before { content: ''; position: absolute; left: 49px; top: 0; bottom: 15px; width: 2px; background-color: #eceff1; }
-.details-title { font-size: 12px; font-weight: 700; color: #90a4ae; margin-bottom: 12px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.compra-details-box { display: none; background-color: #fcfcfc; border-top: 1px dashed #cfd8dc; padding: 15px 20px 20px 60px; position: relative; }
+.compra-details-box::before { content: ''; position: absolute; left: 45px; top: 0; bottom: 15px; width: 2px; background-color: #eceff1; }
+.details-title { font-size: 11px; font-weight: 700; color: #90a4ae; margin-bottom: 10px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
 
 /* TABLAS MINI */
-.mini-prod-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.mini-prod-table th { text-align: left; color: #78909c; font-weight: 600; padding: 8px 10px; border-bottom: 1px solid #eceff1; text-transform: uppercase; font-size: 11px; }
-.mini-prod-table td { padding: 8px 10px; color: #455a64; border-bottom: 1px solid #fafafa; }
+.mini-prod-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mini-prod-table th { text-align: left; color: #78909c; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #eceff1; text-transform: uppercase; font-size: 11px; }
+.mini-prod-table td { padding: 6px 8px; color: #455a64; border-bottom: 1px solid #fafafa; }
 
 /* TABLA DISTRIBUCIÓN */
-.dist-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border: 1px solid #eceff1; border-radius: 8px; overflow: hidden; }
-.dist-table th { background: #f1f5f9; padding: 15px; text-align: left; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
-.dist-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500; }
+.dist-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; border: 1px solid #eceff1; border-radius: 8px; overflow: hidden; }
+.dist-table th { background: #f1f5f9; padding: 12px; text-align: left; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.dist-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500; }
 .dist-table tr:hover { background-color: #f8fafc; }
 .dist-table tr:last-child td { border-bottom: none; }
 
@@ -141,36 +141,37 @@ a { text-decoration: none; }
 .text-center { text-align: center !important; }
 .w-unit { width: 120px; } .w-qty { width: 100px; } .w-val { width: 140px; }
 
-.selection-summary { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; background: #e3f2fd; padding: 15px 25px; border-radius: 8px; color: #0d47a1; font-size: 15px; border: 1px solid #bbdefb; font-weight: 600; }
+.selection-summary { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; background: #e3f2fd; padding: 12px 20px; border-radius: 8px; color: #0d47a1; font-size: 14px; border: 1px solid #bbdefb; font-weight: 600; }
 
 /* =========================================
    DISEÑO PROFESIONAL DE VALORES DUA
    ========================================= */
 .values-grid { 
     display: grid; 
-    grid-template-columns: 1fr 380px; /* Columna de inputs y columna de tarjeta de totales */
-    gap: 50px; 
+    grid-template-columns: 1fr 350px; 
+    gap: 40px; 
     align-items: start;
 }
 
-.inputs-col { display: flex; flex-direction: column; gap: 20px; }
-.input-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px dashed #eceff1; }
+.inputs-col { display: flex; flex-direction: column; gap: 15px; }
+.input-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #eceff1; }
 .input-row:last-child { border-bottom: none; }
-.input-row label { font-size: 15px; font-weight: 600; color: #455a64; width: 180px; }
+.input-row label { font-size: 13px; font-weight: 600; color: #455a64; width: 180px; }
 .input-calc { 
-    width: 100%; padding: 10px 15px; border: 1px solid #cfd8dc; border-radius: 6px; 
+    width: 100%; padding: 8px 12px; border: 1px solid #cfd8dc; border-radius: 6px; 
     text-align: right; font-weight: 600; color: #263238; font-family: 'Roboto Mono', monospace; 
-    font-size: 16px; background-color: #fff; transition: border-color 0.2s;
+    font-size: 14px; background-color: #fff; transition: border-color 0.2s;
+    height: 38px;
 }
 .input-calc:focus { border-color: #3d4f5d; box-shadow: 0 0 0 3px rgba(61, 79, 93, 0.1); }
 
-/* TARJETA DE RESULTADOS (LOOK FINANCIERO) */
+/* TARJETA DE RESULTADOS */
 .results-col { 
     background: #ffffff; 
     border-radius: 12px; 
     display: flex; 
     flex-direction: column; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Sombra elegante */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
     overflow: hidden;
     border: 1px solid #eceff1;
 }
@@ -178,8 +179,8 @@ a { text-decoration: none; }
 .result-header {
     background-color: #263238;
     color: white;
-    padding: 15px 20px;
-    font-size: 14px;
+    padding: 12px 15px;
+    font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -187,38 +188,36 @@ a { text-decoration: none; }
 }
 
 .result-body {
-    padding: 25px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
 .result-row { 
     display: flex; 
     justify-content: space-between; 
-    font-size: 15px; 
+    font-size: 14px; 
     color: #546e7a;
     align-items: center;
 }
 
 .result-row span:first-child { font-weight: 600; }
-.mono-font { font-family: 'Roboto Mono', monospace; font-weight: 700; color: #263238; font-size: 16px; }
+.mono-font { font-family: 'Roboto Mono', monospace; font-weight: 700; color: #263238; font-size: 15px; }
 
-.result-divider { height: 1px; background-color: #eceff1; margin: 10px 0; }
+.result-divider { height: 1px; background-color: #eceff1; margin: 8px 0; }
 
-.result-row.highlight { 
-    margin-top: 5px; 
-}
+.result-row.highlight { margin-top: 5px; }
 
 .result-row.highlight span:first-child {
-    font-size: 16px;
+    font-size: 15px;
     color: #263238;
     font-weight: 800;
 }
 
 .result-row.highlight .mono-font {
-    font-size: 24px; /* Total grande */
-    color: #2e7d32; /* Verde financiero */
+    font-size: 22px; 
+    color: #2e7d32; 
     font-weight: 800;
 }
 
@@ -227,8 +226,8 @@ a { text-decoration: none; }
    ========================================= */
 .action-footer { text-align: right; margin-top: 30px; }
 .btn-save-dua { 
-    background: #263238; color: white; border: none; padding: 15px 40px; 
-    border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; 
+    background: #263238; color: white; border: none; padding: 12px 35px; 
+    border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; 
     box-shadow: 0 4px 12px rgba(38, 50, 56, 0.3); transition: all 0.2s; 
     display: inline-flex; align-items: center; gap: 10px; letter-spacing: 0.5px;
 }
@@ -244,9 +243,8 @@ a { text-decoration: none; }
 @media (max-width: 600px) {
     .form-grid { grid-template-columns: 1fr; }
     .main-content { padding: 20px; margin-left: 0; width: 100%; }
-    .sidebar { width: 0; padding: 0; } /* Ocultar sidebar en móvil si se desea o ajustar lógica */
+    .sidebar { width: 0; padding: 0; } 
 }
 
-/* Toastr */
 #toast-container { z-index: 99999 !important; }
 .toast-bottom-right { bottom: 30px; right: 30px; }

@@ -226,31 +226,50 @@ function calcularDistribucion(totalFob, flete, seguro, adval, ipm, igv) {
         return;
     }
 
-    const totalGastos = flete + seguro + adval + ipm + igv;
+    // Calculamos el Total DUA (CIF + Impuestos) que usaremos para el Valor Final
+    const cif = totalFob + flete + seguro;
+    const totalDua = cif + adval + ipm + igv;
 
     selectedPurchases.forEach(compra => {
         if(compra.details) {
             compra.details.forEach(det => {
+                const quantity = det.quantity || 0;
                 const unitVal = det.unitValue || 0;
-                const lineTotal = det.quantity * unitVal;
                 
-                let proportion = 0;
-                if(totalFob > 0) proportion = (lineTotal / totalFob);
+                // 1. CÁLCULO PROPORCIÓN (Para mostrar en tabla)
+                // (Cantidad * V.Unit) / TotalRef * 100 -> Redondeado a 2
+                const lineTotal = quantity * unitVal;
+                let rawFactor = 0;
                 
-                const distValue = totalGastos * proportion;
-                const propPercent = (proportion * 100).toFixed(2);
+                if (totalFob > 0) {
+                    rawFactor = lineTotal / totalFob;
+                }
+                
+                const propPercent = (rawFactor * 100).toFixed(2);
 
-                const totalLineValue = lineTotal + distValue;
-                let finalUnitPrice = 0;
-                if(det.quantity > 0) finalUnitPrice = totalLineValue / det.quantity;
+                // 2. CÁLCULO VALOR FINAL (Nueva Lógica Solicitada)
+                // a. Factor crudo redondeado a 4 decimales
+                const factor4Decimals = parseFloat(rawFactor.toFixed(4));
+                
+                // b. Multiplicar por Total DUA
+                const attributedDuaCost = factor4Decimals * totalDua;
+                
+                // c. Dividir por Cantidad de productos
+                let finalUnitValue = 0;
+                if (quantity > 0) {
+                    finalUnitValue = attributedDuaCost / quantity;
+                }
+                
+                // d. Redondear a 2 decimales
+                const finalUnitValueRounded = finalUnitValue.toFixed(2);
 
                 $tbody.append(`
                     <tr>
                         <td><small style="color:#78909c;">${det.productCode}</small><br><b>${det.productName}</b></td>
-                        <td class="text-right">${det.quantity.toFixed(2)}</td>
+                        <td class="text-right">${quantity.toFixed(2)}</td>
                         <td class="text-right">${unitVal.toFixed(2)}</td>
                         <td class="text-right">${propPercent} %</td>
-                        <td class="text-right" style="color:#2e7d32; font-weight:700;">${finalUnitPrice.toFixed(2)}</td>
+                        <td class="text-right" style="color:#2e7d32; font-weight:700;">${finalUnitValueRounded}</td>
                     </tr>
                 `);
             });
@@ -320,7 +339,7 @@ async function guardarDua() {
         return;
     }
 
-    // 3. Validar Valores Monetarios (Obligatorio numérico > 0 o 0 permitido según lógica de negocio, pero deben estar presentes)
+    // 3. Validar Valores Monetarios
     const fobStr = $('#val_fob').val();
     const fleteStr = $('#val_flete').val();
     const seguroStr = $('#val_seguro').val();
