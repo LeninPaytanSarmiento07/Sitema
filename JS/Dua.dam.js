@@ -199,35 +199,45 @@ function autoLlenarFOB() {
 }
 
 function calcularValoresDua() {
-    const fob = parseFloat($('#val_fob').val()) || 0;
+    // 1. Obtener valores de los inputs manuales
+    const fobManual = parseFloat($('#val_fob').val()) || 0;
     const flete = parseFloat($('#val_flete').val()) || 0;
     const seguro = parseFloat($('#val_seguro').val()) || 0;
     const adValorem = parseFloat($('#val_advalorem').val()) || 0;
     
-    const cif = fob + flete + seguro;
+    // 2. Calcular CIF y Total DUA Global
+    const cif = fobManual + flete + seguro;
     const ipm = (cif + adValorem) * 0.02;
     const igv = (cif + adValorem) * 0.16;
     const totalGlobal = cif + adValorem + ipm + igv; 
 
+    // 3. Renderizar Resumen
     $('#res_cif').text(cif.toFixed(2));
     $('#res_ipm').text(ipm.toFixed(2));
     $('#res_igv').text(igv.toFixed(2));
     $('#res_total').text(totalGlobal.toFixed(2));
 
-    calcularDistribucion(fob, flete, seguro, adValorem, ipm, igv);
+    // 4. Calcular el "Total de Referencia" real (suma de las facturas seleccionadas)
+    //    Este valor NO cambia aunque edites el input FOB manual.
+    const totalReferencia = selectedPurchases.reduce((sum, c) => sum + c.total, 0);
+
+    // 5. Llamar a distribución pasando AMBOS valores: el FOB manual (para CIF) y el Total Referencia (para proporción)
+    calcularDistribucion(fobManual, flete, seguro, adValorem, ipm, igv, totalReferencia);
 }
 
-function calcularDistribucion(totalFob, flete, seguro, adval, ipm, igv) {
+function calcularDistribucion(totalFobInput, flete, seguro, adval, ipm, igv, totalRef) {
     const $tbody = $('#bodyDistribucion');
     $tbody.empty();
 
-    if(selectedPurchases.length === 0 || totalFob <= 0) {
-        $tbody.html('<tr><td colspan="5" class="text-center" style="padding:30px; color:#90a4ae;">Seleccione compras y asegure FOB > 0</td></tr>');
+    // Validamos si hay compras. Nota: totalFobInput podría ser 0 si el usuario lo borra,
+    // pero si hay compras seleccionadas, totalRef debería ser > 0.
+    if(selectedPurchases.length === 0) {
+        $tbody.html('<tr><td colspan="5" class="text-center" style="padding:30px; color:#90a4ae;">Seleccione compras para calcular</td></tr>');
         return;
     }
 
-    // Calculamos el Total DUA (CIF + Impuestos) que usaremos para el Valor Final
-    const cif = totalFob + flete + seguro;
+    // Calculamos el Total DUA usando los valores MANUALES (incluyendo el FOB modificado)
+    const cif = totalFobInput + flete + seguro;
     const totalDua = cif + adval + ipm + igv;
 
     selectedPurchases.forEach(compra => {
@@ -236,31 +246,32 @@ function calcularDistribucion(totalFob, flete, seguro, adval, ipm, igv) {
                 const quantity = det.quantity || 0;
                 const unitVal = det.unitValue || 0;
                 
-                // 1. CÁLCULO PROPORCIÓN (Para mostrar en tabla)
-                // (Cantidad * V.Unit) / TotalRef * 100 -> Redondeado a 2
+                // 1. CÁLCULO PROPORCIÓN
+                // Usamos 'totalRef' (la suma real de las facturas) como denominador.
+                // Así, la proporción es FIJA y no cambia al editar el input FOB.
                 const lineTotal = quantity * unitVal;
                 let rawFactor = 0;
                 
-                if (totalFob > 0) {
-                    rawFactor = lineTotal / totalFob;
+                if (totalRef > 0) {
+                    rawFactor = lineTotal / totalRef;
                 }
                 
                 const propPercent = (rawFactor * 100).toFixed(2);
 
-                // 2. CÁLCULO VALOR FINAL (Nueva Lógica Solicitada)
-                // a. Factor crudo redondeado a 4 decimales
+                // 2. CÁLCULO VALOR FINAL
+                // a. Factor redondeado a 4 decimales
                 const factor4Decimals = parseFloat(rawFactor.toFixed(4));
                 
-                // b. Multiplicar por Total DUA
+                // b. Multiplicar ese factor fijo por el Total DUA (que SÍ cambia con el FOB manual)
                 const attributedDuaCost = factor4Decimals * totalDua;
                 
-                // c. Dividir por Cantidad de productos
+                // c. Dividir por cantidad para obtener unitario
                 let finalUnitValue = 0;
                 if (quantity > 0) {
                     finalUnitValue = attributedDuaCost / quantity;
                 }
                 
-                // d. Redondear a 2 decimales
+                // d. Redondear a 2 decimales para visualización
                 const finalUnitValueRounded = finalUnitValue.toFixed(2);
 
                 $tbody.append(`
@@ -393,7 +404,6 @@ async function guardarDua() {
         } else {
             // Manejo de errores API
             if(data && data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-                // Mostrar todos los errores que devuelva la API
                 data.errors.forEach(err => toastr.error(err));
             } else if (data && data.message) {
                 toastr.error(data.message);
