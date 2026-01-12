@@ -683,9 +683,12 @@ function calcularFila(rowId) {
     let qty = parseFloat($row.find('.qty').val()); let unitPrice = parseFloat($row.find('.val').val());
     if (isNaN(qty) || qty < 0) qty = 0; if (isNaN(unitPrice) || unitPrice < 0) unitPrice = 0;
     
-    const total = qty * unitPrice;
-    const subtotal = total / 1.18;
-    const igv = total - subtotal;
+    
+    const subtotal = qty * unitPrice;
+    // IGV es el 18% del subtotal
+    const igv = subtotal * 0.18;
+    // Total es la suma
+    const total = subtotal + igv;
 
     $row.find('.subtotal').text(`${formatoMoneda(subtotal)}`); 
     $row.find('.igv').text(`${formatoMoneda(igv)}`); 
